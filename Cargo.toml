@@ -3,9 +3,16 @@ name = "proxy-rs"
 version = "0.1.0"
 edition = "2021"
 description = "A simple proxy config tool."
+authors = ["Mystic"]
 repository = "https://github.com/pplmx/proxy-rs"
 license = "MIT OR Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+# Name of the binary (optional, default is package name)
+name = "x"
+path = "src/main.rs"
+
 [dependencies]
+clap = "4.4.11"

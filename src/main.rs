@@ -1,3 +1,7 @@
+mod cmd {
+    pub mod root;
+}
+
 fn main() {
-    println!("Hello, world!");
+    cmd::root::execute();
 }
