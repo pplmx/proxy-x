@@ -1,13 +1,20 @@
 // lib.rs
+#[cfg(windows)]
+pub const NPM: &'static str = "npm.cmd";
+
+#[cfg(not(windows))]
+pub const NPM: &'static str = "npm";
+
 pub mod proxy_manager {
     use std::process::Command;
+    use crate::NPM;
 
     pub fn enable_proxy(proxy_url: &str) {
         // git config
-        git_set_config("http.proxy", proxy_url);
+        git_config("http.proxy", Some(proxy_url));
 
         // npm config
-        npm_set_config("proxy", proxy_url);
+        npm_config("proxy", Some(proxy_url));
 
         // export some proxy environment variables
         std::env::set_var("all_proxy", proxy_url);
@@ -18,9 +25,9 @@ pub mod proxy_manager {
     }
 
     pub fn disable_proxy() {
-        git_unset_config("http.proxy");
+        git_config("http.proxy", None);
 
-        npm_unset_config("proxy");
+        npm_config("proxy", None);
 
         std::env::remove_var("all_proxy");
         std::env::remove_var("http_proxy");
@@ -29,45 +36,29 @@ pub mod proxy_manager {
         println!("Proxy disabled");
     }
 
-    fn git_set_config(key: &str, value: &str) {
+    // git global config. if value is None, unset the key
+    fn git_config(key: &str, value: Option<&str>) {
+        let mut args = vec!["config", "--global"];
+        match value {
+            Some(v) => args.extend_from_slice(&[key, v]),
+            None => args.extend_from_slice(&["--unset", key]),
+        }
         Command::new("git")
-            .args(&["config", "--global", key, value])
+            .args(&args)
             .output()
             .ok();
     }
 
-    fn git_unset_config(key: &str) {
-        Command::new("git")
-            .args(&["config", "--global", "--unset", key])
+    // npm config. if value is None, unset the key
+    fn npm_config(key: &str, value: Option<&str>) {
+        let mut args = vec!["config"];
+        match value {
+            Some(v) => args.extend_from_slice(&[key, v]),
+            None => args.extend_from_slice(&["delete", key]),
+        }
+        Command::new(NPM)
+            .args(&args)
             .output()
             .ok();
-    }
-
-    fn npm_set_config(key: &str, value: &str) {
-        if cfg!(target_os = "windows") {
-            Command::new("npm.cmd")
-                .args(&["config", "set", key, value])
-                .output()
-                .ok();
-        } else {
-            Command::new("npm")
-                .args(&["config", "set", key, value])
-                .output()
-                .ok();
-        }
-    }
-
-    fn npm_unset_config(key: &str) {
-        if cfg!(target_os = "windows") {
-            Command::new("npm.cmd")
-                .args(&["config", "delete", key])
-                .output()
-                .ok();
-        } else {
-            Command::new("npm")
-                .args(&["config", "delete", key])
-                .output()
-                .ok();
-        }
     }
 }
