@@ -1,12 +1,13 @@
 // lib.rs
 #[cfg(windows)]
-pub const NPM: &'static str = "npm.cmd";
+pub const NPM: &str = "npm.cmd";
 
 #[cfg(not(windows))]
-pub const NPM: &'static str = "npm";
+pub const NPM: &str = "npm";
 
 pub mod proxy_manager {
     use std::process::Command;
+
     use crate::NPM;
 
     pub fn enable_proxy(proxy_url: &str) {
@@ -43,10 +44,7 @@ pub mod proxy_manager {
             Some(v) => args.extend_from_slice(&[key, v]),
             None => args.extend_from_slice(&["--unset", key]),
         }
-        Command::new("git")
-            .args(&args)
-            .output()
-            .ok();
+        Command::new("git").args(&args).output().ok();
     }
 
     // npm config. if value is None, unset the key
@@ -56,9 +54,6 @@ pub mod proxy_manager {
             Some(v) => args.extend_from_slice(&[key, v]),
             None => args.extend_from_slice(&["delete", key]),
         }
-        Command::new(NPM)
-            .args(&args)
-            .output()
-            .ok();
+        Command::new(NPM).args(&args).output().ok();
     }
 }

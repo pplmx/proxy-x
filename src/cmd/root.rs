@@ -1,15 +1,22 @@
-use clap::{Command, Arg, ArgAction};
+use clap::{crate_authors, crate_description, crate_version, Arg, ArgMatches, Command};
+
 use proxy_rs::proxy_manager;
 
 pub fn execute() {
-    let mut command = Command::new("Proxy Manager")
-        .version("1.0")
-        .author("Mystic")
-        .about("Manages proxy settings for git and npm")
+    let matches = parser();
+    handler(matches);
+}
+
+fn parser() -> ArgMatches {
+    Command::new("Proxy Manager")
+        .arg_required_else_help(true)
+        .version(crate_version!())
+        .author(crate_authors!("\n"))
+        .about(crate_description!())
         .arg(
             Arg::new("enable")
                 .long("enable")
-                .action(ArgAction::Set) // 设置为 true 当标志被使用时
+                .short('e')
                 .value_name("PROXY_URL")
                 .help("Enables the proxy with the given URL")
                 .num_args(1), // 接受一个参数
@@ -17,18 +24,17 @@ pub fn execute() {
         .arg(
             Arg::new("disable")
                 .long("disable")
-                .action(ArgAction::SetFalse) // 设置为 false 当标志被使用时
+                .short('d')
                 .help("Disables the proxy")
                 .num_args(0), // 不接受参数
-        );
+        )
+        .get_matches()
+}
 
-    let matches = command.clone().get_matches();
-
+fn handler(matches: ArgMatches) {
     if let Some(proxy_url) = matches.get_one::<String>("enable") {
         proxy_manager::enable_proxy(proxy_url);
     } else if matches.contains_id("disable") {
         proxy_manager::disable_proxy();
-    } else {
-        command.print_help().unwrap();
     }
 }
