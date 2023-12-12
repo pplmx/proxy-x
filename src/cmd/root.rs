@@ -1,6 +1,6 @@
 use clap::{crate_authors, crate_description, crate_version, Arg, ArgMatches, Command};
 
-use proxy_rs::proxy_manager;
+use proxy_x::proxy_manager;
 
 pub fn execute() {
     let matches = parser();

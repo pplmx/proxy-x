@@ -1,8 +1,8 @@
-# proxy-rs
+# proxy-x
 
-[![Crates.io](https://img.shields.io/crates/v/proxy-rs.svg)](https://crates.io/crates/proxy-rs)
-[![Docs.rs](https://docs.rs/proxy-rs/badge.svg)](https://docs.rs/proxy-rs)
-[![CI](https://github.com/pplmx/proxy-rs/workflows/CI/badge.svg)](https://github.com/pplmx/proxy-rs/actions)
+[![Crates.io](https://img.shields.io/crates/v/proxy-x.svg)](https://crates.io/crates/proxy-x)
+[![Docs.rs](https://docs.rs/proxy-x/badge.svg)](https://docs.rs/proxy-x)
+[![CI](https://github.com/pplmx/proxy-x/workflows/CI/badge.svg)](https://github.com/pplmx/proxy-x/actions)
 
 ## Installation
 
@@ -10,7 +10,7 @@
 
 * Install the rust toolchain in order to have cargo installed by following
   [this](https://www.rust-lang.org/tools/install) guide.
-* run `cargo install proxy-rs`
+* run `cargo install proxy-x`
 
 ## License
 
