@@ -11,13 +11,9 @@ pub mod proxy_manager {
     use crate::NPM;
 
     pub fn enable_proxy(proxy_url: &str) {
-        // git config
         git_config("http.proxy", Some(proxy_url));
-
-        // npm config
         npm_config("proxy", Some(proxy_url));
 
-        // export some proxy environment variables
         std::env::set_var("all_proxy", proxy_url);
         std::env::set_var("http_proxy", proxy_url);
         std::env::set_var("https_proxy", proxy_url);
@@ -27,7 +23,6 @@ pub mod proxy_manager {
 
     pub fn disable_proxy() {
         git_config("http.proxy", None);
-
         npm_config("proxy", None);
 
         std::env::remove_var("all_proxy");
@@ -51,7 +46,7 @@ pub mod proxy_manager {
     fn npm_config(key: &str, value: Option<&str>) {
         let mut args = vec!["config"];
         match value {
-            Some(v) => args.extend_from_slice(&[key, v]),
+            Some(v) => args.extend_from_slice(&["set", key, v]),
             None => args.extend_from_slice(&["delete", key]),
         }
         Command::new(NPM).args(&args).output().ok();
