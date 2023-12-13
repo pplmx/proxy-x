@@ -13,21 +13,19 @@ fn parser() -> ArgMatches {
         .version(crate_version!())
         .author(crate_authors!("\n"))
         .about(crate_description!())
-        .arg(
+        .args(&[
             Arg::new("enable")
                 .long("enable")
                 .short('e')
                 .value_name("PROXY_URL")
                 .help("Enables the proxy with the given URL")
-                .num_args(1), // 接受一个参数
-        )
-        .arg(
+                .num_args(1), // accepts 1 argument
             Arg::new("disable")
                 .long("disable")
                 .short('d')
                 .help("Disables the proxy")
-                .num_args(0), // 不接受参数
-        )
+                .num_args(0), // accepts 0 arguments
+        ])
         .get_matches()
 }
 
