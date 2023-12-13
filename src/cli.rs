@@ -1,4 +1,4 @@
-use clap::{Arg, ArgMatches, Command, crate_authors, crate_description, crate_version};
+use clap::{crate_authors, crate_description, crate_version, Arg, ArgMatches, Command};
 
 use proxy_x::{disable_proxy, enable_proxy};
 

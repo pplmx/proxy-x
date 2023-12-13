@@ -12,7 +12,8 @@ pub fn enable_proxy(proxy_url: &str) {
     set_config("proxy", Some(proxy_url), NPM);
 
     let proxies = ["all_proxy", "http_proxy", "https_proxy"];
-    let no_proxy = "localhost, 127.0.0.1, ::1, .local, .internal, 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12";
+    let no_proxy =
+        "localhost, 127.0.0.1, ::1, .local, .internal, 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12";
     for proxy in proxies.iter() {
         env::set_var(proxy, proxy_url);
     }
