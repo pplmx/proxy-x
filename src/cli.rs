@@ -1,6 +1,6 @@
-use clap::{crate_authors, crate_description, crate_version, Arg, ArgMatches, Command};
+use clap::{Arg, ArgMatches, Command, crate_authors, crate_description, crate_version};
 
-use proxy_x::proxy_manager;
+use proxy_x::{disable_proxy, enable_proxy};
 
 pub fn execute() {
     let matches = parser();
@@ -33,8 +33,8 @@ fn parser() -> ArgMatches {
 
 fn handler(matches: ArgMatches) {
     if let Some(proxy_url) = matches.get_one::<String>("enable") {
-        proxy_manager::enable_proxy(proxy_url);
+        enable_proxy(proxy_url);
     } else if matches.contains_id("disable") {
-        proxy_manager::disable_proxy();
+        disable_proxy();
     }
 }

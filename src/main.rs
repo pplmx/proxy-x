@@ -1,7 +1,5 @@
-mod cmd {
-    pub mod root;
-}
+mod cli;
 
 fn main() {
-    cmd::root::execute();
+    cli::execute();
 }
