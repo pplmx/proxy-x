@@ -1,4 +1,4 @@
-use clap::{command, Arg, ArgMatches, Command};
+use clap::{arg, command, ArgMatches, Command};
 
 use proxy_x::{disable_proxy, enable_proxy, get_agent_ip};
 
@@ -14,7 +14,7 @@ fn parser() -> ArgMatches {
             Command::new("ip").about("Access the agent's IP address"),
             Command::new("enable")
                 .about("Enables the proxy")
-                .arg(Arg::new("proxy_url").required(true)),
+                .arg(arg!(<PROXY_URL> "e.g. http://localhost:7890")),
             Command::new("disable").about("Disables the proxy"),
         ])
         .get_matches()
@@ -24,7 +24,7 @@ fn handler(matches: ArgMatches) {
     match matches.subcommand_name() {
         Some("enable") => {
             let sub_matches = matches.subcommand_matches("enable").unwrap();
-            let proxy_url = sub_matches.get_one::<String>("proxy_url").unwrap();
+            let proxy_url = sub_matches.get_one::<String>("PROXY_URL").unwrap();
             enable_proxy(proxy_url);
         }
         Some("disable") => {
