@@ -8,12 +8,20 @@ build:
 	@cargo build
 
 # cargo check
-check:
+check: fmt clippy test
 	@cargo check
+
+# cargo clippy
+clippy:
+	@cargo clippy --all-targets --all-features --workspace -- -D warnings
 
 # clean cargo cache
 clean:
 	@cargo clean
+
+# fmt
+fmt:
+	@cargo fmt --all --check
 
 # cargo build --release
 release:
@@ -27,6 +35,9 @@ run:
 run-bin:
 	@./target/debug/$(BIN_NAME)
 
+# test
+test:
+	@cargo test --all-features --workspace
 
 # Show help
 help:
