@@ -1,6 +1,6 @@
-use clap::{crate_authors, crate_description, crate_version, Arg, ArgMatches, Command};
+use clap::{command, Arg, ArgMatches, Command};
 
-use proxy_x::{disable_proxy, enable_proxy};
+use proxy_x::{disable_proxy, enable_proxy, get_agent_ip};
 
 pub fn execute() {
     let matches = parser();
@@ -8,31 +8,32 @@ pub fn execute() {
 }
 
 fn parser() -> ArgMatches {
-    Command::new("Proxy Manager")
+    command!() // requires "cargo" feature in clap
         .arg_required_else_help(true)
-        .version(crate_version!())
-        .author(crate_authors!("\n"))
-        .about(crate_description!())
-        .args(&[
-            Arg::new("enable")
-                .long("enable")
-                .short('e')
-                .value_name("PROXY_URL")
-                .help("Enables the proxy with the given URL")
-                .num_args(1), // accepts 1 argument
-            Arg::new("disable")
-                .long("disable")
-                .short('d')
-                .help("Disables the proxy")
-                .num_args(0), // accepts 0 arguments
+        .subcommands(vec![
+            Command::new("ip").about("Access the agent's IP address"),
+            Command::new("enable")
+                .about("Enables the proxy")
+                .arg(Arg::new("proxy_url").required(true)),
+            Command::new("disable").about("Disables the proxy"),
         ])
         .get_matches()
 }
 
 fn handler(matches: ArgMatches) {
-    if let Some(proxy_url) = matches.get_one::<String>("enable") {
-        enable_proxy(proxy_url);
-    } else if matches.contains_id("disable") {
-        disable_proxy();
+    match matches.subcommand_name() {
+        Some("enable") => {
+            let sub_matches = matches.subcommand_matches("enable").unwrap();
+            let proxy_url = sub_matches.get_one::<String>("proxy_url").unwrap();
+            enable_proxy(proxy_url);
+        }
+        Some("disable") => {
+            disable_proxy();
+        }
+        Some("ip") => match get_agent_ip() {
+            Ok(ip) => println!("Current IP: {}", ip),
+            Err(e) => eprintln!("Error getting IP: {}", e),
+        },
+        _ => {}
     }
 }
