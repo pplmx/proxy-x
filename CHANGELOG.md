@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2023-12-26
+
+## Changed
+
+- update version to `0.2.1` in `cargo.toml`
+
 ## [0.2.0] - 2023-12-26
 
 ### Added
