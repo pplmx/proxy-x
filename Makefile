@@ -1,7 +1,7 @@
 .PHONY: help build check run
 .DEFAULT_GOAL := help
 
-BIN_NAME := x
+BIN_NAME := proxy-x
 
 # cargo build
 build:
