@@ -14,9 +14,11 @@
 
 ### Usage
 
-- run `proxy-x` or `proxy-x --help` to see the usage information.
-- run `proxy-x --enable http://localhost:7890` to enable the proxy.
-- run `proxy-x --disable` to disable the proxy.
+- run `proxy-x` to see the help message.
+- run `proxy-x enable http://localhost:7890` to enable the proxy.
+- run `proxy-x disable` to disable the proxy.
+- run `proxy-x ip` to get the current agent ip.
+- run `proxy-x ping example.com` to ping the target dns name or ip.
 
 ## License
 
