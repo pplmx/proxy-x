@@ -2,6 +2,9 @@ use std::io;
 use std::net::UdpSocket;
 use std::process::Command;
 
+pub mod pin;
+pub mod ping;
+
 #[cfg(windows)]
 pub const NPM: &str = "npm.cmd";
 

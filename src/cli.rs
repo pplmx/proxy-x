@@ -1,6 +1,6 @@
 use clap::{arg, command, Args, Parser, Subcommand};
 
-use proxy_x::{disable_proxy, enable_proxy, get_agent_ip};
+use proxy_x::{disable_proxy, enable_proxy, get_agent_ip, pin::pin_hi, ping::ping_hi};
 
 #[derive(Parser)]
 #[command(arg_required_else_help = true, author, version, about, long_about = None)]
@@ -17,8 +17,10 @@ enum Commands {
     Enable(EnableArgs),
     Disable,
     // if no about is provided, #[command(about = "")] can be omitted
-    #[command(about = "Send ICMP ECHO_REQUEST to network hosts")]
+    #[command(about = "Send ICMP ECHO_REQUEST to network hosts, using pnet.")]
     Ping(PingArgs),
+    #[command(about = "Send ICMP ECHO_REQUEST to network hosts, using tokio.")]
+    Pin(PingArgs),
 }
 
 #[derive(Args)]
@@ -68,6 +70,15 @@ pub fn execute() {
             println!("size: {}", args.size);
             println!("ttl: {}", args.ttl);
             println!("interval: {}", args.interval);
+            ping_hi();
+        }
+        Some(Commands::Pin(args)) => {
+            println!("destination: {}", args.destination);
+            println!("count: {}", args.count);
+            println!("size: {}", args.size);
+            println!("ttl: {}", args.ttl);
+            println!("interval: {}", args.interval);
+            pin_hi();
         }
         None => {}
     }
