@@ -33,16 +33,14 @@ pub fn get_agent_ip() -> io::Result<String> {
 
 // Set or unset a configuration for a given tool.
 fn set_config(key: &str, value: Option<&str>, tool: &str) {
-    let mut args = match value {
-        Some(v) => vec!["config", "--global", key, v],
-        None => vec!["config", "--global", "--unset", key],
+    // Use match instead of if else to construct the args vector
+    let args = match (value, tool) {
+        (Some(v), "git") => vec!["config", "--global", key, v],
+        (None, "git") => vec!["config", "--global", "--unset", key],
+        (Some(v), NPM) => vec!["config", "set", key, v],
+        (None, NPM) => vec!["config", "delete", key],
+        _ => panic!("Invalid tool: {}", tool),
     };
-    if tool == NPM {
-        args = match value {
-            Some(v) => vec!["config", "set", key, v],
-            None => vec!["config", "delete", key],
-        };
-    }
     if let Err(e) = Command::new(tool).args(&args).output() {
         eprintln!("Failed to set config for {}: {}", tool, e);
     }
