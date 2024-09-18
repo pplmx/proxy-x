@@ -11,3 +11,8 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 clap = { version = "~4.4.12", features = ["cargo", "derive"] }
+
+[dev-dependencies.cargo-husky]
+version = "1"
+default-features = false # Disable features which are enabled by default
+features = ["precommit-hook", "prepush-hook"]
