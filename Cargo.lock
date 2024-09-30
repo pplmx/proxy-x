@@ -51,12 +51,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cargo-husky"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b02b629252fe8ef6460461409564e2c21d0c8e77e0944f3d189ff06c4e932ad"
-
-[[package]]
 name = "clap"
 version = "4.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -109,6 +103,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 
 [[package]]
+name = "husky-rs"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ddfac7246a1c6d67c96502a5668a70b7aa6c0c454dca96527af90bfcaf15218"
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.71"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -121,8 +121,8 @@ dependencies = [
 name = "proxy-x"
 version = "0.2.2"
 dependencies = [
- "cargo-husky",
  "clap",
+ "husky-rs",
 ]
 
 [[package]]
