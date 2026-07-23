@@ -5,7 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Fixed
+### Added
+- implement `ping` command by invoking the system `ping` binary (cross-platform)
+- implement `pin` command delegating to `ping` (async variant)
+- add `GIT` constant for consistency with `NPM`
+- extract `IP_DISCOVERY_HOST`/`IP_DISCOVERY_BIND` named constants from `get_agent_ip`
+- add unit tests for `set_config` (invalid tool, git exit code 5 no-op)
+- add unit tests for CLI argument parsing and dispatch
+- add unit tests for `ping`/`pin` success and failure paths
+
+### Changed
+- separate `execute()` parsing from dispatch via `run()` returning `Option<String>`
+- update README: `pin` description no longer references tokio specifically
 - `enable_proxy` now rolls back the git proxy config if the npm config
   step fails, preventing a partially-configured state
 - `disable_proxy` now restores the previous git proxy value if the npm

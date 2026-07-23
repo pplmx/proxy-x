@@ -133,42 +133,57 @@ fn test_disable_proxy_is_idempotent_when_not_set() {
 }
 
 #[test]
-fn test_ping_returns_unsupported_with_params() {
+fn test_ping_successful_to_localhost() {
+    // ping to 127.0.0.1 should succeed if the system has a loopback
+    // interface and the `ping` binary is available.
     let params = proxy_x::ping::PingParams {
-        destination: "example.com",
-        count: 4,
+        destination: "127.0.0.1",
+        count: 1,
         size: 56,
         ttl: 64,
         interval: 1000,
     };
     let result = proxy_x::ping::ping(&params);
-    assert!(result.is_err());
-    let err = result.unwrap_err();
-    assert_eq!(err.kind(), std::io::ErrorKind::Unsupported);
-    let msg = err.to_string();
     assert!(
-        msg.contains("example.com"),
-        "error should mention destination"
+        result.is_ok(),
+        "ping to 127.0.0.1 should succeed: {:?}",
+        result.err()
     );
-    assert!(msg.contains("pnet"), "error should mention pnet backend");
 }
 
 #[test]
-fn test_async_ping_returns_unsupported_with_params() {
+fn test_ping_fails_on_invalid_destination() {
+    let params = proxy_x::ping::PingParams {
+        destination: "this-host-definitely-does-not-exist.invalid",
+        count: 1,
+        size: 56,
+        ttl: 64,
+        interval: 1000,
+    };
+    let result = proxy_x::ping::ping(&params);
+    assert!(result.is_err(), "ping to invalid host should fail");
+    let err = result.unwrap_err().to_string();
+    assert!(
+        err.contains("this-host-definitely-does-not-exist"),
+        "error should mention destination: {err}"
+    );
+}
+
+#[test]
+fn test_async_ping_successful_to_localhost() {
     let params = proxy_x::pin::PingParams {
-        destination: "8.8.8.8",
-        count: 3,
-        size: 128,
-        ttl: 128,
-        interval: 500,
+        destination: "127.0.0.1",
+        count: 1,
+        size: 56,
+        ttl: 64,
+        interval: 1000,
     };
     let result = proxy_x::pin::async_ping(&params);
-    assert!(result.is_err());
-    let err = result.unwrap_err();
-    assert_eq!(err.kind(), std::io::ErrorKind::Unsupported);
-    let msg = err.to_string();
-    assert!(msg.contains("8.8.8.8"), "error should mention destination");
-    assert!(msg.contains("tokio"), "error should mention tokio backend");
+    assert!(
+        result.is_ok(),
+        "async_ping to 127.0.0.1 should succeed: {:?}",
+        result.err()
+    );
 }
 
 #[test]

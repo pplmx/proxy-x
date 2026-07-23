@@ -17,9 +17,9 @@ enum Commands {
     Enable(EnableArgs),
     #[command(about = "Disable proxy")]
     Disable,
-    #[command(about = "Send ICMP ECHO_REQUEST to network hosts, using pnet.")]
+    #[command(about = "Send ICMP ECHO_REQUEST to network hosts.")]
     Ping(PingArgs),
-    #[command(about = "Send ICMP ECHO_REQUEST to network hosts, using tokio.")]
+    #[command(about = "Send ICMP ECHO_REQUEST to network hosts (async variant).")]
     Pin(PingArgs),
 }
 
@@ -137,31 +137,58 @@ mod tests {
     }
 
     #[test]
-    fn test_run_pin_returns_error_message_with_tokio() {
-        // `pin` is a placeholder that returns `Unsupported`. The dispatch
-        // should return a `Some(error_message)` mentioning the tokio backend,
-        // not just swallow the error.
-        let args = default_ping_args("example.com");
+    fn test_run_pin_success_returns_none() {
+        // pin to localhost should succeed and dispatch should return None.
+        let args = default_ping_args("127.0.0.1");
         let result = run(Some(Commands::Pin(args)));
-        assert!(result.is_some(), "expected an error message for pin stub");
-        let msg = result.unwrap();
         assert!(
-            msg.contains("tokio"),
-            "error message should mention the tokio backend, got: {msg}"
+            result.is_none(),
+            "pin to 127.0.0.1 should succeed (return None), got: {result:?}"
         );
     }
 
     #[test]
-    fn test_run_ping_returns_error_message_with_pnet() {
-        // `ping` is a placeholder that returns `Unsupported`. The dispatch
-        // should return a `Some(error_message)` mentioning the pnet backend.
-        let args = default_ping_args("example.com");
-        let result = run(Some(Commands::Ping(args)));
-        assert!(result.is_some(), "expected an error message for ping stub");
+    fn test_run_pin_failure_returns_error() {
+        // pin to an invalid host should fail and dispatch should return
+        // Some(error_message) containing the destination.
+        let args = PingArgs {
+            destination: "this-host-does-not-exist.invalid".to_string(),
+            ..default_ping_args("placeholder")
+        };
+        let result = run(Some(Commands::Pin(args)));
+        assert!(result.is_some(), "pin to invalid host should error");
         let msg = result.unwrap();
         assert!(
-            msg.contains("pnet"),
-            "error message should mention the pnet backend, got: {msg}"
+            msg.contains("this-host-does-not-exist"),
+            "error should mention the destination: {msg}"
+        );
+    }
+
+    #[test]
+    fn test_run_ping_success_returns_none() {
+        // Ping to localhost should succeed and dispatch should return None.
+        let args = default_ping_args("127.0.0.1");
+        let result = run(Some(Commands::Ping(args)));
+        assert!(
+            result.is_none(),
+            "ping to 127.0.0.1 should succeed (return None), got: {result:?}"
+        );
+    }
+
+    #[test]
+    fn test_run_ping_failure_returns_error() {
+        // Ping to an invalid host should fail and dispatch should return
+        // Some(error_message) containing the destination.
+        let args = PingArgs {
+            destination: "this-host-does-not-exist.invalid".to_string(),
+            ..default_ping_args("placeholder")
+        };
+        let result = run(Some(Commands::Ping(args)));
+        assert!(result.is_some(), "ping to invalid host should error");
+        let msg = result.unwrap();
+        assert!(
+            msg.contains("this-host-does-not-exist"),
+            "error should mention the destination: {msg}"
         );
     }
 
