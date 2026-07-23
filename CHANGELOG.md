@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- integration tests now verify all three proxy keys (git `http.proxy`, npm
+  `proxy`, npm `https-proxy`) are set on enable and cleared on disable, and
+  exercise the `status` binary end-to-end (disabled state and enabled URL)
 - add doc examples across the public API, with executable doc-tests for the
   pure functions (`validate_proxy_url`, `ProxyStatus::is_disabled`) and
   `no_run` examples for the config/network-mutating ones

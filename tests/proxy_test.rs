@@ -43,6 +43,18 @@ fn git_available() -> std::io::Result<()> {
         })?
 }
 
+/// Read an npm config value by key, returning the trimmed stdout.
+///
+/// For an unset key npm prints a sentinel (`null` on newer versions,
+/// `undefined` on older), so callers compare against those rather than empty.
+fn npm_config_get(key: &str) -> String {
+    let output = std::process::Command::new("npm")
+        .args(["config", "get", key])
+        .output()
+        .expect("failed to read npm config");
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
 #[test]
 fn test_enable_disable_proxy_cycle() {
     let _guard = CONFIG_LOCK.lock().unwrap();
@@ -79,18 +91,18 @@ fn test_enable_disable_proxy_cycle() {
         "git http.proxy should be set to the proxy URL"
     );
 
-    // Verify npm https-proxy was also set: the default npm registry is https,
-    // so enable_proxy must set https-proxy (not just `proxy`) for `npm install`
-    // to actually route through the proxy.
-    let npm_https = std::process::Command::new("npm")
-        .args(["config", "get", "https-proxy"])
-        .output()
-        .expect("failed to read npm config");
-    let npm_https_val = String::from_utf8_lossy(&npm_https.stdout)
-        .trim()
-        .to_string();
+    // Verify BOTH npm keys were set. The default npm registry is https, so
+    // enable_proxy must set `https-proxy` (used for https registries) in
+    // addition to `proxy` (used for http registries) for `npm install` to
+    // actually route through the proxy.
     assert_eq!(
-        npm_https_val, proxy_url,
+        npm_config_get("proxy"),
+        proxy_url,
+        "npm proxy should be set to the proxy URL"
+    );
+    assert_eq!(
+        npm_config_get("https-proxy"),
+        proxy_url,
         "npm https-proxy should be set to the proxy URL"
     );
 
@@ -113,19 +125,15 @@ fn test_enable_disable_proxy_cycle() {
         "git http.proxy should be unset after disable_proxy"
     );
 
-    // Verify npm https-proxy was cleared (npm prints "undefined" for unset keys).
-    let npm_https_after = std::process::Command::new("npm")
-        .args(["config", "get", "https-proxy"])
-        .output()
-        .expect("failed to read npm config");
-    let npm_https_after_val = String::from_utf8_lossy(&npm_https_after.stdout)
-        .trim()
-        .to_string();
-    // npm prints "null" (newer) or "undefined" (older) for an unset key.
-    assert!(
-        matches!(npm_https_after_val.as_str(), "null" | "undefined"),
-        "npm https-proxy should be unset after disable_proxy, got: {npm_https_after_val}"
-    );
+    // Verify BOTH npm keys were cleared. npm prints "null" (newer) or
+    // "undefined" (older) for an unset key.
+    for key in ["proxy", "https-proxy"] {
+        let value = npm_config_get(key);
+        assert!(
+            matches!(value.as_str(), "null" | "undefined"),
+            "npm {key} should be unset after disable_proxy, got: {value}"
+        );
+    }
 }
 
 #[test]
@@ -289,4 +297,46 @@ fn test_ping_params_fields() {
     assert_eq!(params.size, 256);
     assert_eq!(params.ttl, 255);
     assert_eq!(params.interval, 2000);
+}
+
+#[test]
+fn test_cli_status_reflects_proxy_state_end_to_end() {
+    let _guard = CONFIG_LOCK.lock().unwrap();
+    if git_available().is_err() {
+        eprintln!("Skipping: git/npm not available");
+        return;
+    }
+    let bin = cargo_bin();
+    let proxy_url = "http://127.0.0.1:38080";
+
+    // Start from a clean (disabled) state.
+    let _ = proxy_x::disable_proxy();
+
+    // `status` should report disabled when no proxy is set.
+    let output = std::process::Command::new(&bin)
+        .arg("status")
+        .output()
+        .expect("failed to execute proxy-x binary");
+    assert!(output.status.success(), "status should exit 0");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("Proxy is disabled"),
+        "status should report disabled when no proxy is set, got: {stdout}"
+    );
+
+    // After enabling, `status` should report the proxy URL.
+    proxy_x::enable_proxy(proxy_url).expect("enable_proxy should succeed");
+    let output = std::process::Command::new(&bin)
+        .arg("status")
+        .output()
+        .expect("failed to execute proxy-x binary");
+    assert!(output.status.success(), "status should exit 0");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains(proxy_url),
+        "status should report the enabled proxy URL, got: {stdout}"
+    );
+
+    // Cleanup.
+    let _ = proxy_x::disable_proxy();
 }
