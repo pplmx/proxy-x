@@ -38,6 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - update the docs
 
 ### Fixed
+- `enable_proxy`'s rollback on an npm failure now restores the git proxy to
+  its previous value instead of unconditionally unsetting it. Previously a
+  partial failure silently wiped a proxy the user had configured before
+  calling `enable`; the prior value is now preserved (and unset only when
+  there was none). The previous-value lookup is shared with `disable_proxy`
+  via a new internal `read_git_proxy` helper
 - `enable_proxy` now validates the proxy URL (must include a scheme such as
   `http://`) before writing any config. Both `git` and `npm` silently accept
   scheme-less URLs like `localhost:8080`, which are then unusable as proxies;

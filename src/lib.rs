@@ -63,11 +63,18 @@ pub fn enable_proxy(proxy_url: &str) -> io::Result<()> {
     // Validate up front so an invalid URL never leaves a half-configured
     // git proxy behind if the npm step were to fail.
     validate_proxy_url(proxy_url)?;
+
+    // Capture the existing git proxy so that, if the npm step below fails,
+    // the rollback restores the previous value rather than wiping it. This
+    // prevents a partial failure from silently dropping a proxy the user
+    // had configured before calling `enable`.
+    let git_proxy_before = read_git_proxy();
+
     set_config("http.proxy", Some(proxy_url), GIT)?;
     if let Err(e) = set_config("proxy", Some(proxy_url), NPM) {
-        // Rollback: git proxy was set successfully, but npm failed.
-        // Attempt to unset the git proxy to avoid leaving a partial state.
-        let _ = set_config("http.proxy", None, GIT);
+        // Rollback: restore the prior git proxy (or unset it if there was
+        // none) to avoid leaving the system in a partial/inconsistent state.
+        let _ = set_config("http.proxy", git_proxy_before.as_deref(), GIT);
         return Err(e);
     }
     println!("Proxy enabled");
@@ -76,17 +83,7 @@ pub fn enable_proxy(proxy_url: &str) -> io::Result<()> {
 
 pub fn disable_proxy() -> io::Result<()> {
     // Save the current git proxy value so we can roll back if npm fails.
-    let git_proxy_before = Command::new(GIT)
-        .args(["config", "--global", "http.proxy"])
-        .output()
-        .ok()
-        .and_then(|o| {
-            if o.status.success() {
-                Some(String::from_utf8_lossy(&o.stdout).trim().to_string())
-            } else {
-                None
-            }
-        });
+    let git_proxy_before = read_git_proxy();
 
     set_config("http.proxy", None, GIT)?;
     if let Err(e) = set_config("proxy", None, NPM) {
@@ -99,6 +96,26 @@ pub fn disable_proxy() -> io::Result<()> {
     }
     println!("Proxy disabled");
     Ok(())
+}
+
+/// Read the current global git `http.proxy` value.
+///
+/// Returns `None` when the key is unset, empty, or git is unavailable.
+/// Shared by [`enable_proxy`] and [`disable_proxy`] so both can restore the
+/// previous proxy on a partial (npm) failure instead of silently dropping it.
+fn read_git_proxy() -> Option<String> {
+    Command::new(GIT)
+        .args(["config", "--global", "http.proxy"])
+        .output()
+        .ok()
+        .and_then(|o| {
+            if o.status.success() {
+                let value = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                (!value.is_empty()).then_some(value)
+            } else {
+                None
+            }
+        })
 }
 
 pub fn get_agent_ip() -> io::Result<String> {
@@ -151,6 +168,11 @@ fn set_config(key: &str, value: Option<&str>, tool: &str) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    /// Serialize tests that read/write the global git `http.proxy` key so
+    /// parallel test threads don't race on the same config value.
+    static CONFIG_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn test_set_config_invalid_tool_returns_error() {
@@ -171,6 +193,12 @@ mod tests {
 
     #[test]
     fn test_set_config_git_unset_nonexistent_is_noop() {
+        // Serialize with the other global-git-config writers: `git config
+        // --global` takes an exclusive lock on the config file, so two
+        // concurrent writes fail with a non-5 "could not lock config file"
+        // error, which would break the no-op assertion below.
+        let _guard = CONFIG_LOCK.lock().unwrap();
+
         // git returns exit code 5 (GIT_CONFIG_KEY_NOT_FOUND) when --unset is
         // used on a key that doesn't exist. set_config treats this as Ok(()).
         // Use an unlikely key name to avoid any risk of side effects.
@@ -238,5 +266,35 @@ mod tests {
                 "error should mention the scheme requirement or emptiness, got: {msg}"
             );
         }
+    }
+
+    #[test]
+    fn test_read_git_proxy_round_trips_config_value() {
+        let _guard = CONFIG_LOCK.lock().unwrap();
+
+        // Start from a clean slate so the assertions are deterministic.
+        let _ = set_config("http.proxy", None, GIT);
+        assert_eq!(
+            read_git_proxy(),
+            None,
+            "read_git_proxy should be None when the key is unset"
+        );
+
+        // Set a value and confirm it is read back exactly.
+        let url = "http://127.0.0.1:38080";
+        set_config("http.proxy", Some(url), GIT).expect("setting git proxy should succeed");
+        assert_eq!(
+            read_git_proxy().as_deref(),
+            Some(url),
+            "read_git_proxy should return the value just written"
+        );
+
+        // Unset and confirm it returns to None (also serves as cleanup).
+        let _ = set_config("http.proxy", None, GIT);
+        assert_eq!(
+            read_git_proxy(),
+            None,
+            "read_git_proxy should be None after unsetting"
+        );
     }
 }
