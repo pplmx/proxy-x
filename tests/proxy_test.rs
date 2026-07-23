@@ -1,46 +1,106 @@
-/// Tests for proxy-x public API.
-///
-/// Note: enable_proxy and disable_proxy modify global git/npm config
-/// as a side effect. Tests clean up after themselves by calling
-/// disable_proxy at the end.
+// Tests for proxy-x public API.
+//
+// Note: enable_proxy and disable_proxy modify global git/npm config
+// as a side effect. Tests clean up after themselves by calling
+// disable_proxy at the end.
+
+/// Returns Ok(()) if the `git` binary is available, Err otherwise.
+fn git_available() -> std::io::Result<()> {
+    std::process::Command::new("git")
+        .arg("--version")
+        .output()
+        .map(|o| {
+            if o.status.success() {
+                Ok(())
+            } else {
+                Err(std::io::Error::other("git --version failed"))
+            }
+        })?
+}
 
 #[test]
 fn test_enable_disable_proxy_cycle() {
     // Clean up any leftover state from previous runs
     let _ = proxy_x::disable_proxy();
 
-    // Enable proxy should succeed (returns Ok or Err, but must not panic)
-    let enable_result = proxy_x::enable_proxy("http://localhost:7890");
+    // Skip if git or npm is not available (e.g., CI without them)
+    if git_available().is_err() {
+        eprintln!("Skipping: git/npm not available");
+        return;
+    }
+
+    let proxy_url = "http://127.0.0.1:38080";
+
+    // Enable proxy should succeed and actually set the config
+    let enable_result = proxy_x::enable_proxy(proxy_url);
     assert!(
-        enable_result.is_ok() || enable_result.is_err(),
-        "enable_proxy must return a Result, not panic"
+        enable_result.is_ok(),
+        "enable_proxy should succeed when git/npm are available: {:?}",
+        enable_result.err()
     );
 
-    // Disable proxy should succeed (returns Ok or Err, but must not panic)
+    // Verify git config was actually set
+    let git_config = std::process::Command::new("git")
+        .args(["config", "--global", "http.proxy"])
+        .output()
+        .expect("failed to read git config");
+    assert!(git_config.status.success());
+    let git_val = String::from_utf8_lossy(&git_config.stdout)
+        .trim()
+        .to_string();
+    assert_eq!(
+        git_val, proxy_url,
+        "git http.proxy should be set to the proxy URL"
+    );
+
+    // Disable proxy should succeed and clear the config
     let disable_result = proxy_x::disable_proxy();
     assert!(
-        disable_result.is_ok() || disable_result.is_err(),
-        "disable_proxy must return a Result, not panic"
+        disable_result.is_ok(),
+        "disable_proxy should succeed: {:?}",
+        disable_result.err()
     );
 
-    // Clean up
-    let _ = proxy_x::disable_proxy();
+    // Verify git config was actually unset
+    let git_config_after = std::process::Command::new("git")
+        .args(["config", "--global", "http.proxy"])
+        .output()
+        .expect("failed to read git config");
+    // git config --unset leaves the key absent; --get exits non-zero
+    assert!(
+        !git_config_after.status.success(),
+        "git http.proxy should be unset after disable_proxy"
+    );
 }
 
 #[test]
-fn test_enable_proxy_returns_result_type() {
-    // Verify the return type is io::Result<()> at compile time
-    let result: Result<(), std::io::Error> = proxy_x::enable_proxy("http://127.0.0.1:8080");
-    // Must not panic regardless of outcome
-    drop(result);
-}
-
-#[test]
-fn test_disable_proxy_returns_result_type() {
-    // Verify the return type is io::Result<()> at compile time
-    let result: Result<(), std::io::Error> = proxy_x::disable_proxy();
-    // Must not panic regardless of outcome
-    drop(result);
+fn test_get_agent_ip_returns_valid_ipv4_or_skips() {
+    // get_agent_ip connects to 8.8.8.8:53 to determine the local IP.
+    // This requires network access, so we skip if it fails.
+    let result = proxy_x::get_agent_ip();
+    match result {
+        Ok(ip) => {
+            // On success, the IP must be a valid IPv4 address
+            let parsed: std::result::Result<std::net::Ipv4Addr, _> = ip.parse();
+            assert!(
+                parsed.is_ok(),
+                "get_agent_ip should return a valid IPv4 address, got: {}",
+                ip
+            );
+            // Loopback would indicate the socket didn't actually connect
+            let addr = parsed.unwrap();
+            assert!(
+                !addr.is_loopback(),
+                "get_agent_ip should not return a loopback address"
+            );
+        }
+        Err(e) => {
+            eprintln!(
+                "get_agent_ip failed (expected in restricted network): {}",
+                e
+            );
+        }
+    }
 }
 
 #[test]
