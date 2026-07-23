@@ -37,6 +37,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ping() / async_ping() return io::Result with proper error messages
 - update the docs
 
+### Fixed
+- `enable_proxy` now validates the proxy URL (must include a scheme such as
+  `http://`) before writing any config. Both `git` and `npm` silently accept
+  scheme-less URLs like `localhost:8080`, which are then unusable as proxies;
+  proxy-x now fails fast with a clear message instead
+
 ## [0.2.1] - 2023-12-26
 ### Changed
 - update version to `0.2.1` in `cargo.toml`

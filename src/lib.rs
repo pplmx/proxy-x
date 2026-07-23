@@ -27,7 +27,42 @@ const IP_DISCOVERY_HOST: &str = "8.8.8.8:53";
 /// Bind address used by [`get_agent_ip`] to create an ephemeral UDP socket.
 const IP_DISCOVERY_BIND: &str = "0.0.0.0:0";
 
+/// Validate a proxy URL before storing it.
+///
+/// Both `git config` and `npm config set` accept scheme-less or otherwise
+/// malformed proxy URLs at write time (git stores them silently; npm only
+/// warns on read). Storing such a value produces a broken proxy that is hard
+/// to debug, so we fail fast with a clear message instead.
+///
+/// A URL is considered valid when, after trimming surrounding whitespace, it
+/// is non-empty and contains a scheme separator (`://`). This accepts every
+/// common proxy scheme (`http`, `https`, `socks4`, `socks5`, `socks5h`,
+/// `http://` with userinfo) while rejecting bare `host:port` values.
+pub fn validate_proxy_url(url: &str) -> io::Result<()> {
+    let trimmed = url.trim();
+    if trimmed.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "proxy URL must not be empty",
+        ));
+    }
+    if !trimmed.contains("://") {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "proxy URL must include a scheme (e.g. \"http://\") \
+                 because bare host:port values are silently stored by git \
+                 and npm but are unusable as proxies; got: {trimmed}"
+            ),
+        ));
+    }
+    Ok(())
+}
+
 pub fn enable_proxy(proxy_url: &str) -> io::Result<()> {
+    // Validate up front so an invalid URL never leaves a half-configured
+    // git proxy behind if the npm step were to fail.
+    validate_proxy_url(proxy_url)?;
     set_config("http.proxy", Some(proxy_url), GIT)?;
     if let Err(e) = set_config("proxy", Some(proxy_url), NPM) {
         // Rollback: git proxy was set successfully, but npm failed.
@@ -167,5 +202,41 @@ mod tests {
             err.contains("exit code"),
             "error message should report the exit code, got: {err}"
         );
+    }
+
+    #[test]
+    fn test_validate_proxy_url_accepts_schemed_urls() {
+        // Every valid proxy URL form includes a scheme separator ("://"),
+        // including userinfo and socks variants.
+        for url in [
+            "http://127.0.0.1:8080",
+            "https://proxy.example.com:443",
+            "socks5://10.0.0.1:1080",
+            "socks5h://user:pass@host:1080",
+        ] {
+            assert!(
+                validate_proxy_url(url).is_ok(),
+                "expected valid proxy URL to pass: {url}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_validate_proxy_url_rejects_scheme_less_and_empty() {
+        // git and npm silently accept scheme-less URLs at config-set time, but
+        // a scheme-less proxy is unusable by git and only warned-on by npm.
+        // validate_proxy_url must fail fast instead of storing broken config.
+        for bad in ["", "   ", "localhost:8080", "127.0.0.1:8080", "not a url"] {
+            let result = validate_proxy_url(bad);
+            assert!(
+                result.is_err(),
+                "expected invalid proxy URL to be rejected: {bad:?}"
+            );
+            let msg = result.unwrap_err().to_string();
+            assert!(
+                msg.contains("scheme") || msg.contains("empty"),
+                "error should mention the scheme requirement or emptiness, got: {msg}"
+            );
+        }
     }
 }
