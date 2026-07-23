@@ -1,3 +1,12 @@
-pub fn pin_hi() {
-    println!("Hi, pin! Using tokio to implement ICMP.");
+use std::io;
+
+/// Placeholder for tokio-based ICMP ping implementation.
+///
+/// This function is not yet implemented. It exists so that the module
+/// structure mirrors the intended design (tokio for async ping).
+pub fn pin_hi() -> io::Result<()> {
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "ICMP ping via tokio is not yet implemented",
+    ))
 }

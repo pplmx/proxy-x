@@ -70,22 +70,14 @@ pub fn execute() {
             Ok(()) => {}
             Err(e) => eprintln!("Error disabling proxy: {}", e),
         },
-        Some(Commands::Ping(args)) => {
-            println!("destination: {}", args.destination);
-            println!("count: {}", args.count);
-            println!("size: {}", args.size);
-            println!("ttl: {}", args.ttl);
-            println!("interval: {}", args.interval);
-            ping_hi();
-        }
-        Some(Commands::Pin(args)) => {
-            println!("destination: {}", args.destination);
-            println!("count: {}", args.count);
-            println!("size: {}", args.size);
-            println!("ttl: {}", args.ttl);
-            println!("interval: {}", args.interval);
-            pin_hi();
-        }
+        Some(Commands::Ping(args)) => match ping_hi() {
+            Ok(()) => println!("Ping to {} completed", args.destination),
+            Err(e) => eprintln!("Error: {}", e),
+        },
+        Some(Commands::Pin(args)) => match pin_hi() {
+            Ok(()) => println!("Ping to {} completed", args.destination),
+            Err(e) => eprintln!("Error: {}", e),
+        },
         None => {}
     }
 }

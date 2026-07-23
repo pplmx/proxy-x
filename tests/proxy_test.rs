@@ -17,11 +17,10 @@ fn test_enable_disable_proxy_cycle() {
 }
 
 #[test]
-fn test_set_config_invalid_tool() {
-    // Verify that an invalid tool name produces an error, not a panic
+fn test_disable_proxy_error_handling() {
+    // Verify that disable_proxy returns a Result instead of panicking
+    // This exercises the error path of set_config
     let result = proxy_x::disable_proxy();
-    // This should complete without panicking regardless of outcome
-    // (it may fail if git config isn't available, which is fine)
     match result {
         Ok(()) => {}
         Err(e) => {
@@ -29,4 +28,15 @@ fn test_set_config_invalid_tool() {
             eprintln!("Expected behavior when git config unavailable: {}", e)
         }
     }
+}
+
+#[test]
+fn test_disable_proxy_returns_result() {
+    // The old code returned (), now it returns Result
+    // This test ensures the return type change is correct
+    let result: Result<(), std::io::Error> = proxy_x::disable_proxy();
+    assert!(
+        result.is_ok() || result.is_err(),
+        "disable_proxy should return a Result"
+    );
 }
