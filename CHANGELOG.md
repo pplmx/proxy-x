@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- add crate-level (`//!`) documentation to the library root: an overview, a
+  command table, how the proxy is applied to git and npm, and a usage example
 - integration tests now verify all three proxy keys (git `http.proxy`, npm
   `proxy`, npm `https-proxy`) are set on enable and cleared on disable, and
   exercise the `status` binary end-to-end (disabled state and enabled URL)

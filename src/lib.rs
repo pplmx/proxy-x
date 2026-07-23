@@ -1,3 +1,41 @@
+//! # proxy-x
+//!
+//! A small cross-platform tool and library for managing HTTP(S) proxy settings
+//! for `git` and `npm`, plus a few network diagnostics.
+//!
+//! ## Commands
+//!
+//! | Command | Effect |
+//! |---------|--------|
+//! | `enable <url>` | Set the proxy for git and npm |
+//! | `disable` | Clear the proxy for git and npm (idempotent) |
+//! | `status` | Show the current proxy configuration |
+//! | `ip` | Print the local outbound IP address |
+//! | `ping <host>` / `pin <host>` | ICMP ping via the system `ping` binary |
+//!
+//! ## How the proxy is applied
+//!
+//! - **git**: sets the global `http.proxy`. Despite the name, git uses this key
+//!   for both `http://` and `https://` URLs, so a single value covers all git
+//!   traffic.
+//! - **npm**: sets both `proxy` (used for http registries) and `https-proxy`
+//!   (used for https registries). The default registry is `https://`, so
+//!   `https-proxy` is required for `npm install` to actually use the proxy.
+//!
+//! [`enable_proxy`] validates the URL (it must include a scheme such as
+//! `http://`) and rolls back any partially-written config if a step fails, so
+//! the system is never left half-configured. [`disable_proxy`] restores the
+//! previous git proxy on a partial failure.
+//!
+//! ## Library usage
+//!
+//! ```no_run
+//! proxy_x::enable_proxy("http://127.0.0.1:7890").unwrap();
+//! let status = proxy_x::proxy_status();
+//! println!("proxy disabled? {}", status.is_disabled());
+//! proxy_x::disable_proxy().unwrap();
+//! ```
+
 use std::io;
 use std::net::UdpSocket;
 use std::process::Command;
