@@ -70,14 +70,32 @@ pub fn execute() {
             Ok(()) => {}
             Err(e) => eprintln!("Error disabling proxy: {}", e),
         },
-        Some(Commands::Ping(args)) => match ping() {
-            Ok(()) => println!("Ping to {} completed", args.destination),
-            Err(e) => eprintln!("Error: {}", e),
-        },
-        Some(Commands::Pin(args)) => match async_ping() {
-            Ok(()) => println!("Ping to {} completed", args.destination),
-            Err(e) => eprintln!("Error: {}", e),
-        },
+        Some(Commands::Ping(args)) => {
+            let params = proxy_x::ping::PingParams {
+                destination: &args.destination,
+                count: args.count,
+                size: args.size,
+                ttl: args.ttl,
+                interval: args.interval,
+            };
+            match ping(&params) {
+                Ok(()) => println!("Ping to {} completed", args.destination),
+                Err(e) => eprintln!("Error: {}", e),
+            }
+        }
+        Some(Commands::Pin(args)) => {
+            let params = proxy_x::pin::PingParams {
+                destination: &args.destination,
+                count: args.count,
+                size: args.size,
+                ttl: args.ttl,
+                interval: args.interval,
+            };
+            match async_ping(&params) {
+                Ok(()) => println!("Ping to {} completed", args.destination),
+                Err(e) => eprintln!("Error: {}", e),
+            }
+        }
         None => {}
     }
 }

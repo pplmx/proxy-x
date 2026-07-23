@@ -42,3 +42,59 @@ fn test_disable_proxy_returns_result_type() {
     // Must not panic regardless of outcome
     drop(result);
 }
+
+#[test]
+fn test_ping_returns_unsupported_with_params() {
+    let params = proxy_x::ping::PingParams {
+        destination: "example.com",
+        count: 4,
+        size: 56,
+        ttl: 64,
+        interval: 1000,
+    };
+    let result = proxy_x::ping::ping(&params);
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::Unsupported);
+    let msg = err.to_string();
+    assert!(
+        msg.contains("example.com"),
+        "error should mention destination"
+    );
+    assert!(msg.contains("pnet"), "error should mention pnet backend");
+}
+
+#[test]
+fn test_async_ping_returns_unsupported_with_params() {
+    let params = proxy_x::pin::PingParams {
+        destination: "8.8.8.8",
+        count: 3,
+        size: 128,
+        ttl: 128,
+        interval: 500,
+    };
+    let result = proxy_x::pin::async_ping(&params);
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert_eq!(err.kind(), std::io::ErrorKind::Unsupported);
+    let msg = err.to_string();
+    assert!(msg.contains("8.8.8.8"), "error should mention destination");
+    assert!(msg.contains("tokio"), "error should mention tokio backend");
+}
+
+#[test]
+fn test_ping_params_fields() {
+    // Verify PingParams can be constructed with all CLI argument values
+    let params = proxy_x::ping::PingParams {
+        destination: "test.host",
+        count: 10,
+        size: 256,
+        ttl: 255,
+        interval: 2000,
+    };
+    assert_eq!(params.destination, "test.host");
+    assert_eq!(params.count, 10);
+    assert_eq!(params.size, 256);
+    assert_eq!(params.ttl, 255);
+    assert_eq!(params.interval, 2000);
+}
