@@ -4,7 +4,7 @@ use std::io;
 ///
 /// This function is not yet implemented. It exists so that the module
 /// structure mirrors the intended design (tokio for async ping).
-pub fn pin_hi() -> io::Result<()> {
+pub fn async_ping() -> io::Result<()> {
     Err(io::Error::new(
         io::ErrorKind::Unsupported,
         "ICMP ping via tokio is not yet implemented",

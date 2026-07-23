@@ -1,6 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 
-use proxy_x::{disable_proxy, enable_proxy, get_agent_ip, pin::pin_hi, ping::ping_hi};
+use proxy_x::{disable_proxy, enable_proxy, get_agent_ip, pin::async_ping, ping::ping};
 
 #[derive(Parser)]
 #[command(arg_required_else_help = true, author, version, about, long_about = None)]
@@ -70,11 +70,11 @@ pub fn execute() {
             Ok(()) => {}
             Err(e) => eprintln!("Error disabling proxy: {}", e),
         },
-        Some(Commands::Ping(args)) => match ping_hi() {
+        Some(Commands::Ping(args)) => match ping() {
             Ok(()) => println!("Ping to {} completed", args.destination),
             Err(e) => eprintln!("Error: {}", e),
         },
-        Some(Commands::Pin(args)) => match pin_hi() {
+        Some(Commands::Pin(args)) => match async_ping() {
             Ok(()) => println!("Ping to {} completed", args.destination),
             Err(e) => eprintln!("Error: {}", e),
         },
