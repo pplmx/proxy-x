@@ -52,6 +52,12 @@ fn set_config(key: &str, value: Option<&str>, tool: &str) -> io::Result<()> {
     };
     let output = Command::new(tool).args(&args).output()?;
     if !output.status.success() {
+        // Unsetting a config key that doesn't exist is not an error.
+        // git returns exit code 5 (GIT_CONFIG_KEY_NOT_FOUND) in this case;
+        // npm returns a non-zero exit code too. Treat it as a no-op.
+        if value.is_none() && output.status.code() == Some(5) {
+            return Ok(());
+        }
         let stderr = String::from_utf8_lossy(&output.stderr);
         let stderr = stderr.trim();
         return Err(io::Error::other(format!(

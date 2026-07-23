@@ -5,11 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Added
-- `pin` command documentation in README
-- `disable` command help description
-
-### Changed
+### Fixed
+- `disable_proxy` no longer fails when the proxy is not currently set (git
+  returns exit code 5 when unsetting a non-existent key; this is now treated
+  as a no-op instead of an error)
+- `ping` and `pin` commands no longer silently ignore all CLI arguments
+  (destination, count, size, ttl, interval)
 - move husky-rs to dev-dependencies (it's a dev tool, not needed at build time)
 - remove local build.rs (husky-rs build script handles hook installation)
 - update clap to ~4.6.0

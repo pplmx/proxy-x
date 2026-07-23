@@ -4,6 +4,12 @@
 // as a side effect. Tests clean up after themselves by calling
 // disable_proxy at the end.
 
+use std::sync::Mutex;
+
+/// Mutex to serialize tests that modify global git/npm config.
+/// Without this, parallel test threads race on the same config keys.
+static CONFIG_LOCK: Mutex<()> = Mutex::new(());
+
 /// Returns Ok(()) if the `git` binary is available, Err otherwise.
 fn git_available() -> std::io::Result<()> {
     std::process::Command::new("git")
@@ -20,6 +26,7 @@ fn git_available() -> std::io::Result<()> {
 
 #[test]
 fn test_enable_disable_proxy_cycle() {
+    let _guard = CONFIG_LOCK.lock().unwrap();
     // Clean up any leftover state from previous runs
     let _ = proxy_x::disable_proxy();
 
@@ -103,6 +110,27 @@ fn test_get_agent_ip_returns_valid_ipv4_or_skips() {
     }
 }
 
+#[test]
+fn test_disable_proxy_is_idempotent_when_not_set() {
+    let _guard = CONFIG_LOCK.lock().unwrap();
+    // When no proxy is currently set, disable_proxy should still succeed
+    // instead of failing with a git exit code 5 (GIT_CONFIG_KEY_NOT_FOUND).
+    if git_available().is_err() {
+        eprintln!("Skipping: git/npm not available");
+        return;
+    }
+
+    // Ensure no proxy is set
+    let _ = proxy_x::disable_proxy();
+
+    // Calling disable again should not fail even though the key doesn't exist
+    let result = proxy_x::disable_proxy();
+    assert!(
+        result.is_ok(),
+        "disable_proxy should be idempotent (succeed when proxy not set): {:?}",
+        result.err()
+    );
+}
 #[test]
 fn test_ping_returns_unsupported_with_params() {
     let params = proxy_x::ping::PingParams {
