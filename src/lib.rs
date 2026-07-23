@@ -146,4 +146,26 @@ mod tests {
             result.err()
         );
     }
+
+    #[test]
+    fn test_set_config_command_failure_returns_error() {
+        // An empty key is rejected by npm with a non-zero (exit code 1) status.
+        // This exercises set_config's general error path: the command exits
+        // non-zero, value is Some (so the git exit-5 no-op branch does not
+        // apply), and a descriptive io::Error must be returned.
+        let result = set_config("", Some("http://127.0.0.1:38080"), NPM);
+        assert!(
+            result.is_err(),
+            "npm config set with an empty key should fail"
+        );
+        let err = result.unwrap_err().to_string();
+        assert!(
+            err.contains(NPM),
+            "error message should mention the tool name '{NPM}', got: {err}"
+        );
+        assert!(
+            err.contains("exit code"),
+            "error message should report the exit code, got: {err}"
+        );
+    }
 }

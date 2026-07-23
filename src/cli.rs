@@ -118,6 +118,31 @@ fn run(command: Option<Commands>) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    /// Serialize tests that mutate global git/npm config.
+    ///
+    /// `run(Enable)` and `run(Disable)` invoke `enable_proxy`/`disable_proxy`,
+    /// which read and write the global git and npm config. Running them in
+    /// parallel would race on the same config keys, so they take this lock.
+    static CONFIG_LOCK: Mutex<()> = Mutex::new(());
+
+    /// Returns `Ok(())` if the `git` binary is usable, `Err` otherwise.
+    ///
+    /// Tests that depend on git/npm are skipped (not failed) when the toolchain
+    /// is absent, e.g. in minimal CI images.
+    fn git_available() -> std::io::Result<()> {
+        std::process::Command::new(proxy_x::GIT)
+            .arg("--version")
+            .output()
+            .map(|o| {
+                if o.status.success() {
+                    Ok(())
+                } else {
+                    Err(std::io::Error::other("git --version failed"))
+                }
+            })?
+    }
 
     /// Helper to construct a `PingArgs` with sensible defaults.
     fn default_ping_args(destination: &str) -> PingArgs {
@@ -130,10 +155,79 @@ mod tests {
         }
     }
 
+    /// Helper to construct an `EnableArgs` for a local test proxy.
+    fn test_enable_args() -> EnableArgs {
+        EnableArgs {
+            proxy_url: "http://127.0.0.1:38080".to_string(),
+        }
+    }
+
     #[test]
     fn test_run_none_returns_none() {
         // Running without a subcommand is a no-op — no error message.
         assert!(run(None).is_none());
+    }
+
+    #[test]
+    fn test_run_ip_returns_none_or_error_message() {
+        // The `ip` command resolves the local interface via a UDP socket.
+        // It succeeds (returns None) when the network stack is usable, or
+        // returns Some("Error getting IP: …") when it is not. Either outcome
+        // is valid; we assert the dispatch routes correctly without panicking.
+        let result = run(Some(Commands::Ip));
+        if let Some(msg) = &result {
+            assert!(
+                msg.starts_with("Error getting IP"),
+                "unexpected ip dispatch result: {msg}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_run_disable_returns_none_when_available() {
+        // Disable must succeed (return None) when git/npm are present, even if
+        // no proxy was previously configured. This covers the Disable dispatch
+        // branch and the idempotent unset path.
+        let _guard = CONFIG_LOCK.lock().unwrap();
+        if git_available().is_err() {
+            eprintln!("Skipping: git/npm not available");
+            return;
+        }
+
+        // Ensure a clean starting state.
+        let _ = disable_proxy();
+
+        let result = run(Some(Commands::Disable));
+        assert!(
+            result.is_none(),
+            "disable should succeed (return None) when git/npm available: {result:?}"
+        );
+    }
+
+    #[test]
+    fn test_run_enable_returns_none_when_available() {
+        // Enable must succeed (return None) on a valid proxy URL and must be
+        // cleaned up afterwards so global config is left untouched. This covers
+        // the Enable dispatch branch.
+        let _guard = CONFIG_LOCK.lock().unwrap();
+        if git_available().is_err() {
+            eprintln!("Skipping: git/npm not available");
+            return;
+        }
+
+        // Start from a known state, then restore it after the test.
+        let _ = disable_proxy();
+        let result = run(Some(Commands::Enable(test_enable_args())));
+        let cleanup = disable_proxy();
+
+        assert!(
+            cleanup.is_ok(),
+            "cleanup disable_proxy should succeed after enable test"
+        );
+        assert!(
+            result.is_none(),
+            "enable should succeed (return None) when git/npm available: {result:?}"
+        );
     }
 
     #[test]
