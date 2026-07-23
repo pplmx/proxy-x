@@ -38,6 +38,18 @@ const IP_DISCOVERY_BIND: &str = "0.0.0.0:0";
 /// is non-empty and contains a scheme separator (`://`). This accepts every
 /// common proxy scheme (`http`, `https`, `socks4`, `socks5`, `socks5h`,
 /// `http://` with userinfo) while rejecting bare `host:port` values.
+///
+/// # Examples
+///
+/// ```
+/// use proxy_x::validate_proxy_url;
+///
+/// assert!(validate_proxy_url("http://127.0.0.1:7890").is_ok());
+/// assert!(validate_proxy_url("socks5h://user:pass@host:1080").is_ok());
+/// // Bare host:port is rejected: git/npm store it silently but it is unusable.
+/// assert!(validate_proxy_url("127.0.0.1:7890").is_err());
+/// assert!(validate_proxy_url("").is_err());
+/// ```
 pub fn validate_proxy_url(url: &str) -> io::Result<()> {
     let trimmed = url.trim();
     if trimmed.is_empty() {
@@ -59,6 +71,17 @@ pub fn validate_proxy_url(url: &str) -> io::Result<()> {
     Ok(())
 }
 
+/// Enable the proxy for git and npm.
+///
+/// Sets git's global `http.proxy` and npm's `proxy` + `https-proxy` to
+/// `proxy_url`. If the npm step fails, the git config is rolled back to its
+/// prior value so the system is never left half-configured.
+///
+/// # Examples
+///
+/// ```no_run
+/// proxy_x::enable_proxy("http://127.0.0.1:7890").expect("failed to enable proxy");
+/// ```
 pub fn enable_proxy(proxy_url: &str) -> io::Result<()> {
     enable_proxy_with(proxy_url, GIT, NPM)
 }
@@ -99,6 +122,17 @@ fn enable_proxy_with(proxy_url: &str, git: &str, npm: &str) -> io::Result<()> {
     Ok(())
 }
 
+/// Disable the proxy for git and npm.
+///
+/// Unsets git's global `http.proxy` and npm's `proxy` + `https-proxy`.
+/// Idempotent: succeeds even if no proxy is currently set. If the npm step
+/// fails, the previous git proxy value is restored.
+///
+/// # Examples
+///
+/// ```no_run
+/// proxy_x::disable_proxy().expect("failed to disable proxy");
+/// ```
 pub fn disable_proxy() -> io::Result<()> {
     disable_proxy_with(GIT, NPM)
 }
@@ -205,6 +239,18 @@ pub struct ProxyStatus {
 
 impl ProxyStatus {
     /// `true` when no proxy is configured for git or npm.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use proxy_x::ProxyStatus;
+    ///
+    /// let disabled = ProxyStatus { git: None, npm: None, npm_https: None };
+    /// assert!(disabled.is_disabled());
+    ///
+    /// let enabled = ProxyStatus { git: Some("http://x".into()), npm: None, npm_https: None };
+    /// assert!(!enabled.is_disabled());
+    /// ```
     pub fn is_disabled(&self) -> bool {
         self.git.is_none() && self.npm.is_none() && self.npm_https.is_none()
     }
@@ -215,6 +261,15 @@ impl ProxyStatus {
 /// Read-only: this never modifies any config. A tool that is missing or
 /// errors simply contributes `None` to the corresponding field, so this call
 /// cannot fail. Used by the `status` command.
+///
+/// # Examples
+///
+/// ```no_run
+/// let status = proxy_x::proxy_status();
+/// if status.is_disabled() {
+///     println!("no proxy configured");
+/// }
+/// ```
 pub fn proxy_status() -> ProxyStatus {
     ProxyStatus {
         git: read_git_proxy(),
@@ -223,6 +278,18 @@ pub fn proxy_status() -> ProxyStatus {
     }
 }
 
+/// Determine the local outbound IP address.
+///
+/// Connects an ephemeral UDP socket toward a public host (without sending any
+/// data) to learn which local interface the kernel would use for outbound
+/// traffic. Requires a usable network route.
+///
+/// # Examples
+///
+/// ```no_run
+/// let ip = proxy_x::get_agent_ip().expect("no network route");
+/// println!("local IP: {ip}");
+/// ```
 pub fn get_agent_ip() -> io::Result<String> {
     let socket = UdpSocket::bind(IP_DISCOVERY_BIND)?;
     socket.connect(IP_DISCOVERY_HOST)?;

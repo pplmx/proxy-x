@@ -25,6 +25,21 @@ pub struct PingParams<'a> {
 /// On Linux and macOS the full parameter set is passed through. On Windows
 /// only `count` and `size` are mapped (TTL via `-i` and interval are not
 /// supported by the built-in Windows `ping`).
+///
+/// # Examples
+///
+/// ```no_run
+/// use proxy_x::ping::{ping, PingParams};
+///
+/// let params = PingParams {
+///     destination: "example.com",
+///     count: 4,
+///     size: 56,
+///     ttl: 64,
+///     interval: 1000,
+/// };
+/// ping(&params).expect("ping failed");
+/// ```
 pub fn ping(params: &PingParams) -> io::Result<()> {
     execute_ping(ping_binary(), params)
 }

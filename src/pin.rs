@@ -9,6 +9,21 @@ pub use crate::ping::PingParams;
 /// This currently delegates to the synchronous [`crate::ping::ping`]
 /// implementation, which invokes the system `ping` command. A future
 /// version will use tokio for true async I/O with raw sockets.
+///
+/// # Examples
+///
+/// ```no_run
+/// use proxy_x::pin::{async_ping, PingParams};
+///
+/// let params = PingParams {
+///     destination: "example.com",
+///     count: 4,
+///     size: 56,
+///     ttl: 64,
+///     interval: 1000,
+/// };
+/// async_ping(&params).expect("ping failed");
+/// ```
 pub fn async_ping(params: &PingParams) -> io::Result<()> {
     crate::ping::ping(params)
 }

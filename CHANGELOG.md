@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- add doc examples across the public API, with executable doc-tests for the
+  pure functions (`validate_proxy_url`, `ProxyStatus::is_disabled`) and
+  `no_run` examples for the config/network-mutating ones
 - add `status` command and a public `proxy_status()` API that report the
   current git/npm proxy configuration (read-only; a missing or erroring tool
   is reported as "not set" rather than failing)
