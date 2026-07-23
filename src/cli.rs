@@ -62,8 +62,14 @@ pub fn execute() {
             Ok(ip) => println!("Current IP: {}", ip),
             Err(e) => eprintln!("Error getting IP: {}", e),
         },
-        Some(Commands::Enable(args)) => enable_proxy(&args.proxy_url),
-        Some(Commands::Disable) => disable_proxy(),
+        Some(Commands::Enable(args)) => match enable_proxy(&args.proxy_url) {
+            Ok(()) => {}
+            Err(e) => eprintln!("Error enabling proxy: {}", e),
+        },
+        Some(Commands::Disable) => match disable_proxy() {
+            Ok(()) => {}
+            Err(e) => eprintln!("Error disabling proxy: {}", e),
+        },
         Some(Commands::Ping(args)) => {
             println!("destination: {}", args.destination);
             println!("count: {}", args.count);
