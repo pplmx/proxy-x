@@ -15,8 +15,8 @@ enum Commands {
     Ip,
     #[command(about = "Enable proxy")]
     Enable(EnableArgs),
+    #[command(about = "Disable proxy")]
     Disable,
-    // if no about is provided, #[command(about = "")] can be omitted
     #[command(about = "Send ICMP ECHO_REQUEST to network hosts, using pnet.")]
     Ping(PingArgs),
     #[command(about = "Send ICMP ECHO_REQUEST to network hosts, using tokio.")]
