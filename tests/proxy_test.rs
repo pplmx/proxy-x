@@ -79,6 +79,21 @@ fn test_enable_disable_proxy_cycle() {
         "git http.proxy should be set to the proxy URL"
     );
 
+    // Verify npm https-proxy was also set: the default npm registry is https,
+    // so enable_proxy must set https-proxy (not just `proxy`) for `npm install`
+    // to actually route through the proxy.
+    let npm_https = std::process::Command::new("npm")
+        .args(["config", "get", "https-proxy"])
+        .output()
+        .expect("failed to read npm config");
+    let npm_https_val = String::from_utf8_lossy(&npm_https.stdout)
+        .trim()
+        .to_string();
+    assert_eq!(
+        npm_https_val, proxy_url,
+        "npm https-proxy should be set to the proxy URL"
+    );
+
     // Disable proxy should succeed and clear the config
     let disable_result = proxy_x::disable_proxy();
     assert!(
@@ -96,6 +111,20 @@ fn test_enable_disable_proxy_cycle() {
     assert!(
         !git_config_after.status.success(),
         "git http.proxy should be unset after disable_proxy"
+    );
+
+    // Verify npm https-proxy was cleared (npm prints "undefined" for unset keys).
+    let npm_https_after = std::process::Command::new("npm")
+        .args(["config", "get", "https-proxy"])
+        .output()
+        .expect("failed to read npm config");
+    let npm_https_after_val = String::from_utf8_lossy(&npm_https_after.stdout)
+        .trim()
+        .to_string();
+    // npm prints "null" (newer) or "undefined" (older) for an unset key.
+    assert!(
+        matches!(npm_https_after_val.as_str(), "null" | "undefined"),
+        "npm https-proxy should be unset after disable_proxy, got: {npm_https_after_val}"
     );
 }
 

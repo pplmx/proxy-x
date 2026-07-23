@@ -61,20 +61,29 @@ pub fn validate_proxy_url(url: &str) -> io::Result<()> {
 
 pub fn enable_proxy(proxy_url: &str) -> io::Result<()> {
     // Validate up front so an invalid URL never leaves a half-configured
-    // git proxy behind if the npm step were to fail.
+    // proxy behind if a later step fails.
     validate_proxy_url(proxy_url)?;
 
-    // Capture the existing git proxy so that, if the npm step below fails,
-    // the rollback restores the previous value rather than wiping it. This
-    // prevents a partial failure from silently dropping a proxy the user
-    // had configured before calling `enable`.
-    let git_proxy_before = read_git_proxy();
+    // Capture the prior value of every key we touch so that a partial failure
+    // can be rolled back to exactly where the user started, rather than
+    // silently dropping a proxy they had configured before calling `enable`.
+    let git_before = read_git_proxy();
+    let npm_proxy_before = read_npm_config("proxy");
+    let npm_https_before = read_npm_config("https-proxy");
 
     set_config("http.proxy", Some(proxy_url), GIT)?;
-    if let Err(e) = set_config("proxy", Some(proxy_url), NPM) {
-        // Rollback: restore the prior git proxy (or unset it if there was
-        // none) to avoid leaving the system in a partial/inconsistent state.
-        let _ = set_config("http.proxy", git_proxy_before.as_deref(), GIT);
+
+    // npm distinguishes `proxy` (used for http registries) from `https-proxy`
+    // (used for https registries). The default registry is https, so setting
+    // only `proxy` would NOT proxy `npm install`; both keys must be set.
+    let npm_result = set_config("proxy", Some(proxy_url), NPM)
+        .and_then(|()| set_config("https-proxy", Some(proxy_url), NPM));
+    if let Err(e) = npm_result {
+        // Roll back all three keys to their previous values (unset when there
+        // was none) to avoid leaving the system in a partial/inconsistent state.
+        let _ = set_config("http.proxy", git_before.as_deref(), GIT);
+        let _ = set_config("proxy", npm_proxy_before.as_deref(), NPM);
+        let _ = set_config("https-proxy", npm_https_before.as_deref(), NPM);
         return Err(e);
     }
     println!("Proxy enabled");
@@ -83,13 +92,17 @@ pub fn enable_proxy(proxy_url: &str) -> io::Result<()> {
 
 pub fn disable_proxy() -> io::Result<()> {
     // Save the current git proxy value so we can roll back if npm fails.
-    let git_proxy_before = read_git_proxy();
+    let git_before = read_git_proxy();
 
     set_config("http.proxy", None, GIT)?;
-    if let Err(e) = set_config("proxy", None, NPM) {
+
+    // Unset both npm proxy keys (see enable_proxy for why both are managed).
+    let npm_result =
+        set_config("proxy", None, NPM).and_then(|()| set_config("https-proxy", None, NPM));
+    if let Err(e) = npm_result {
         // Rollback: git proxy was unset, but npm failed.
-        // Attempt to restore the previous git proxy value.
-        if let Some(prev) = git_proxy_before {
+        // Attempt to restore the previous git proxy value (npm is best-effort).
+        if let Some(prev) = git_before {
             let _ = set_config("http.proxy", Some(&prev), GIT);
         }
         return Err(e);
@@ -118,13 +131,14 @@ fn read_git_proxy() -> Option<String> {
         })
 }
 
-/// Read npm's global `proxy` value.
+/// Read an npm config value by key (e.g. `"proxy"` or `"https-proxy"`).
 ///
 /// Returns `None` when the key is unset (npm prints the literal `undefined`),
-/// the output is empty, or npm is unavailable. Shared by [`proxy_status`].
-fn read_npm_proxy() -> Option<String> {
+/// the output is empty, or npm is unavailable. Shared by [`enable_proxy`],
+/// [`disable_proxy`], and [`proxy_status`].
+fn read_npm_config(key: &str) -> Option<String> {
     let output = Command::new(NPM)
-        .args(["config", "get", "proxy"])
+        .args(["config", "get", key])
         .output()
         .ok()?;
     if !output.status.success() {
@@ -135,11 +149,12 @@ fn read_npm_proxy() -> Option<String> {
 
 /// Parse the stdout of `npm config get <key>`.
 ///
-/// npm prints the value (plus a trailing newline) when the key is set, or the
-/// literal `undefined` when it is not. Returns `None` for unset/empty values.
+/// npm prints the value (plus a trailing newline) when the key is set, or a
+/// sentinel when it is not: newer npm versions print `null`, older ones print
+/// `undefined`. Returns `None` for any unset/empty value.
 fn parse_npm_config_output(stdout: &str) -> Option<String> {
     let value = stdout.trim();
-    if value.is_empty() || value == "undefined" {
+    if value.is_empty() || value == "undefined" || value == "null" {
         None
     } else {
         Some(value.to_string())
@@ -149,16 +164,20 @@ fn parse_npm_config_output(stdout: &str) -> Option<String> {
 /// A read-only snapshot of the proxy configuration reported by git and npm.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ProxyStatus {
-    /// Value of git's global `http.proxy`, or `None` when unset.
+    /// Value of git's global `http.proxy` (applies to both http and https
+    /// URLs), or `None` when unset.
     pub git: Option<String>,
-    /// Value of npm's `proxy`, or `None` when unset.
+    /// Value of npm's `proxy` (used for http registries), or `None` when unset.
     pub npm: Option<String>,
+    /// Value of npm's `https-proxy` (used for the default https registry), or
+    /// `None` when unset.
+    pub npm_https: Option<String>,
 }
 
 impl ProxyStatus {
-    /// `true` when neither git nor npm has a proxy configured.
+    /// `true` when no proxy is configured for git or npm.
     pub fn is_disabled(&self) -> bool {
-        self.git.is_none() && self.npm.is_none()
+        self.git.is_none() && self.npm.is_none() && self.npm_https.is_none()
     }
 }
 
@@ -170,7 +189,8 @@ impl ProxyStatus {
 pub fn proxy_status() -> ProxyStatus {
     ProxyStatus {
         git: read_git_proxy(),
-        npm: read_npm_proxy(),
+        npm: read_npm_config("proxy"),
+        npm_https: read_npm_config("https-proxy"),
     }
 }
 
@@ -364,7 +384,12 @@ mod tests {
         assert_eq!(
             parse_npm_config_output("undefined\n"),
             None,
-            "npm prints the literal 'undefined' for unset keys"
+            "older npm prints the literal 'undefined' for unset keys"
+        );
+        assert_eq!(
+            parse_npm_config_output("null\n"),
+            None,
+            "newer npm prints the literal 'null' for unset keys"
         );
         assert_eq!(
             parse_npm_config_output(""),
@@ -382,17 +407,26 @@ mod tests {
     fn test_proxy_status_is_disabled() {
         assert!(ProxyStatus {
             git: None,
-            npm: None
+            npm: None,
+            npm_https: None
         }
         .is_disabled());
         assert!(!ProxyStatus {
             git: Some("http://x".to_string()),
-            npm: None
+            npm: None,
+            npm_https: None
         }
         .is_disabled());
         assert!(!ProxyStatus {
             git: None,
-            npm: Some("http://x".to_string())
+            npm: Some("http://x".to_string()),
+            npm_https: None
+        }
+        .is_disabled());
+        assert!(!ProxyStatus {
+            git: None,
+            npm: None,
+            npm_https: Some("http://x".to_string())
         }
         .is_disabled());
     }

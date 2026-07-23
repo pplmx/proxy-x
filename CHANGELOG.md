@@ -41,6 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - update the docs
 
 ### Fixed
+- `enable`/`disable` now manage npm's `https-proxy` in addition to `proxy`.
+  The default npm registry is `https://`, and npm uses `https-proxy` (not
+  `proxy`) for https registries, so previously `npm install` did NOT route
+  through the configured proxy. `enable` now sets both keys (with a full
+  rollback of git `http.proxy`, npm `proxy`, and npm `https-proxy` on
+  failure), `disable` clears both, and `status` reports `https-proxy`. git is
+  unchanged: `http.proxy` already covers both http and https URLs
 - `enable_proxy`'s rollback on an npm failure now restores the git proxy to
   its previous value instead of unconditionally unsetting it. Previously a
   partial failure silently wiped a proxy the user had configured before

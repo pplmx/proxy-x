@@ -127,12 +127,16 @@ fn run(command: Option<Commands>) -> Option<String> {
                 println!("Proxy is disabled");
             } else {
                 println!(
-                    "git http.proxy: {}",
+                    "git http.proxy:  {}",
                     status.git.as_deref().unwrap_or("(not set)")
                 );
                 println!(
-                    "npm proxy:      {}",
+                    "npm proxy:       {}",
                     status.npm.as_deref().unwrap_or("(not set)")
+                );
+                println!(
+                    "npm https-proxy: {}",
+                    status.npm_https.as_deref().unwrap_or("(not set)")
                 );
             }
         }
