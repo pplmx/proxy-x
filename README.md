@@ -20,6 +20,7 @@
 - run `proxy-x ip` to get the current agent ip.
 - run `proxy-x ping example.com` to ping the target dns name or ip.
 - run `proxy-x pin example.com` to send ICMP ECHO_REQUEST (alternate).
+- run `proxy-x status` to show the current proxy configuration.
 
 ## License
 

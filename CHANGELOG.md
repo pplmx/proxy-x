@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- add `status` command and a public `proxy_status()` API that report the
+  current git/npm proxy configuration (read-only; a missing or erroring tool
+  is reported as "not set" rather than failing)
 - implement `ping` command by invoking the system `ping` binary (cross-platform)
 - implement `pin` command delegating to `ping` (async variant)
 - add `GIT` constant for consistency with `NPM`

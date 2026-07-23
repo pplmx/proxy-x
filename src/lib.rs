@@ -118,6 +118,62 @@ fn read_git_proxy() -> Option<String> {
         })
 }
 
+/// Read npm's global `proxy` value.
+///
+/// Returns `None` when the key is unset (npm prints the literal `undefined`),
+/// the output is empty, or npm is unavailable. Shared by [`proxy_status`].
+fn read_npm_proxy() -> Option<String> {
+    let output = Command::new(NPM)
+        .args(["config", "get", "proxy"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    parse_npm_config_output(&String::from_utf8_lossy(&output.stdout))
+}
+
+/// Parse the stdout of `npm config get <key>`.
+///
+/// npm prints the value (plus a trailing newline) when the key is set, or the
+/// literal `undefined` when it is not. Returns `None` for unset/empty values.
+fn parse_npm_config_output(stdout: &str) -> Option<String> {
+    let value = stdout.trim();
+    if value.is_empty() || value == "undefined" {
+        None
+    } else {
+        Some(value.to_string())
+    }
+}
+
+/// A read-only snapshot of the proxy configuration reported by git and npm.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ProxyStatus {
+    /// Value of git's global `http.proxy`, or `None` when unset.
+    pub git: Option<String>,
+    /// Value of npm's `proxy`, or `None` when unset.
+    pub npm: Option<String>,
+}
+
+impl ProxyStatus {
+    /// `true` when neither git nor npm has a proxy configured.
+    pub fn is_disabled(&self) -> bool {
+        self.git.is_none() && self.npm.is_none()
+    }
+}
+
+/// Read the current proxy configuration from git and npm.
+///
+/// Read-only: this never modifies any config. A tool that is missing or
+/// errors simply contributes `None` to the corresponding field, so this call
+/// cannot fail. Used by the `status` command.
+pub fn proxy_status() -> ProxyStatus {
+    ProxyStatus {
+        git: read_git_proxy(),
+        npm: read_npm_proxy(),
+    }
+}
+
 pub fn get_agent_ip() -> io::Result<String> {
     let socket = UdpSocket::bind(IP_DISCOVERY_BIND)?;
     socket.connect(IP_DISCOVERY_HOST)?;
@@ -295,6 +351,76 @@ mod tests {
             read_git_proxy(),
             None,
             "read_git_proxy should be None after unsetting"
+        );
+    }
+
+    #[test]
+    fn test_parse_npm_config_output() {
+        assert_eq!(
+            parse_npm_config_output("http://127.0.0.1:8080\n"),
+            Some("http://127.0.0.1:8080".to_string()),
+            "a set value should be returned trimmed"
+        );
+        assert_eq!(
+            parse_npm_config_output("undefined\n"),
+            None,
+            "npm prints the literal 'undefined' for unset keys"
+        );
+        assert_eq!(
+            parse_npm_config_output(""),
+            None,
+            "empty output means unset"
+        );
+        assert_eq!(
+            parse_npm_config_output("   \n"),
+            None,
+            "whitespace-only output means unset"
+        );
+    }
+
+    #[test]
+    fn test_proxy_status_is_disabled() {
+        assert!(ProxyStatus {
+            git: None,
+            npm: None
+        }
+        .is_disabled());
+        assert!(!ProxyStatus {
+            git: Some("http://x".to_string()),
+            npm: None
+        }
+        .is_disabled());
+        assert!(!ProxyStatus {
+            git: None,
+            npm: Some("http://x".to_string())
+        }
+        .is_disabled());
+    }
+
+    #[test]
+    fn test_proxy_status_reflects_git_config() {
+        let _guard = CONFIG_LOCK.lock().unwrap();
+
+        let _ = set_config("http.proxy", None, GIT);
+        assert_eq!(
+            proxy_status().git,
+            None,
+            "git proxy should be None when unset"
+        );
+
+        let url = "http://127.0.0.1:38080";
+        set_config("http.proxy", Some(url), GIT).expect("setting git proxy should succeed");
+        assert_eq!(
+            proxy_status().git.as_deref(),
+            Some(url),
+            "proxy_status should report the git proxy just written"
+        );
+
+        let _ = set_config("http.proxy", None, GIT);
+        assert_eq!(
+            proxy_status().git,
+            None,
+            "cleanup should clear the git proxy"
         );
     }
 }

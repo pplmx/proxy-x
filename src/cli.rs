@@ -1,6 +1,8 @@
 use clap::{Args, Parser, Subcommand};
 
-use proxy_x::{disable_proxy, enable_proxy, get_agent_ip, pin::async_ping, ping::ping};
+use proxy_x::{
+    disable_proxy, enable_proxy, get_agent_ip, pin::async_ping, ping::ping, proxy_status,
+};
 
 #[derive(Parser)]
 #[command(arg_required_else_help = true, author, version, about, long_about = None)]
@@ -21,6 +23,8 @@ enum Commands {
     Ping(PingArgs),
     #[command(about = "Send ICMP ECHO_REQUEST to network hosts (alternate).")]
     Pin(PingArgs),
+    #[command(about = "Show the current proxy configuration")]
+    Status,
 }
 
 #[derive(Args)]
@@ -117,6 +121,21 @@ fn run(command: Option<Commands>) -> Option<String> {
                 Err(e) => return Some(format!("Error: {e}")),
             }
         }
+        Some(Commands::Status) => {
+            let status = proxy_status();
+            if status.is_disabled() {
+                println!("Proxy is disabled");
+            } else {
+                println!(
+                    "git http.proxy: {}",
+                    status.git.as_deref().unwrap_or("(not set)")
+                );
+                println!(
+                    "npm proxy:      {}",
+                    status.npm.as_deref().unwrap_or("(not set)")
+                );
+            }
+        }
         None => {}
     }
     None
@@ -188,6 +207,17 @@ mod tests {
                 "unexpected ip dispatch result: {msg}"
             );
         }
+    }
+
+    #[test]
+    fn test_run_status_returns_none() {
+        // `status` is read-only and always succeeds (returns None), whether or
+        // not a proxy is currently configured or git/npm are even installed.
+        let result = run(Some(Commands::Status));
+        assert!(
+            result.is_none(),
+            "status dispatch should never error: {result:?}"
+        );
     }
 
     #[test]
@@ -314,6 +344,12 @@ mod tests {
     fn test_cli_parse_ip_command() {
         let cli = Cli::try_parse_from(["proxy-x", "ip"]).unwrap();
         assert!(matches!(cli.command, Some(Commands::Ip)));
+    }
+
+    #[test]
+    fn test_cli_parse_status_command() {
+        let cli = Cli::try_parse_from(["proxy-x", "status"]).unwrap();
+        assert!(matches!(cli.command, Some(Commands::Status)));
     }
 
     #[test]
