@@ -3,13 +3,13 @@
 
 echo "Running pre-push checks..."
 
-cargo fmt --check
+cargo fmt --all --check
 if [ $? -ne 0 ]; then
     echo "Code is not formatted. Run: cargo fmt"
     exit 1
 fi
 
-cargo clippy --all-targets --all-features -- -D warnings
+cargo clippy --all-targets --all-features --workspace -- -D warnings
 if [ $? -ne 0 ]; then
     echo "Clippy checks failed!"
     exit 1
