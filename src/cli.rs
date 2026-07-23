@@ -1,4 +1,4 @@
-use clap::{arg, command, Args, Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 use proxy_x::{disable_proxy, enable_proxy, get_agent_ip, pin::pin_hi, ping::ping_hi};
 

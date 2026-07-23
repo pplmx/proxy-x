@@ -1,0 +1,24 @@
+#!/bin/sh
+[ "$HUSKY" = "0" ] && exit 0
+
+echo "Running pre-push checks..."
+
+cargo fmt --check
+if [ $? -ne 0 ]; then
+    echo "Code is not formatted. Run: cargo fmt"
+    exit 1
+fi
+
+cargo clippy --all-targets --all-features -- -D warnings
+if [ $? -ne 0 ]; then
+    echo "Clippy checks failed!"
+    exit 1
+fi
+
+cargo test --all-features --workspace
+if [ $? -ne 0 ]; then
+    echo "Tests failed!"
+    exit 1
+fi
+
+echo "All checks passed! Pushing..."

@@ -11,6 +11,4 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 clap = { version = "~4.5.0", features = ["cargo", "derive"] }
-
-[dev-dependencies]
-husky-rs = "^0.1.1"
+husky-rs = "0.3"
