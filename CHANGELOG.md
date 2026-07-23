@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - separate `execute()` parsing from dispatch via `run()` returning `Option<String>`
 - update README: `pin` description no longer references tokio specifically
+- add per-reply timeout (5s Linux/macOS, 5s Windows) to prevent hanging
+  on unreachable hosts
 - `enable_proxy` now rolls back the git proxy config if the npm config
   step fails, preventing a partially-configured state
 - `disable_proxy` now restores the previous git proxy value if the npm

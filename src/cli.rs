@@ -19,7 +19,7 @@ enum Commands {
     Disable,
     #[command(about = "Send ICMP ECHO_REQUEST to network hosts.")]
     Ping(PingArgs),
-    #[command(about = "Send ICMP ECHO_REQUEST to network hosts (async variant).")]
+    #[command(about = "Send ICMP ECHO_REQUEST to network hosts (alternate).")]
     Pin(PingArgs),
 }
 

@@ -84,6 +84,11 @@ fn build_args(cmd: &mut Command, params: &PingParams) {
     cmd.arg("-i");
     cmd.arg(format!("{interval_s}"));
 
+    // Per-reply timeout (-W) prevents hanging indefinitely on unreachable
+    // hosts. 5 seconds is a reasonable default that matches system behavior.
+    cmd.arg("-W");
+    cmd.arg("5");
+
     cmd.arg(params.destination);
 }
 
@@ -96,6 +101,10 @@ fn build_args(cmd: &mut Command, params: &PingParams) {
         "-l",
         &params.size.to_string(),
     ]);
+    // -w sets the per-reply timeout in milliseconds. 5000ms (5s) prevents
+    // hanging on unreachable hosts.
+    cmd.arg("-w");
+    cmd.arg("5000");
     cmd.arg(params.destination);
 }
 
