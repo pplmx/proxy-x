@@ -42,6 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `http://`) before writing any config. Both `git` and `npm` silently accept
   scheme-less URLs like `localhost:8080`, which are then unusable as proxies;
   proxy-x now fails fast with a clear message instead
+- `proxy-x` now exits with status 1 (non-zero) when a command fails, instead
+  of printing an error to stderr and exiting 0. This lets shells, `&&`,
+  `$?`, and CI detect failures
 
 ## [0.2.1] - 2023-12-26
 ### Changed

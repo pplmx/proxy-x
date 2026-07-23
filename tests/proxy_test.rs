@@ -10,6 +10,25 @@ use std::sync::Mutex;
 /// Without this, parallel test threads race on the same config keys.
 static CONFIG_LOCK: Mutex<()> = Mutex::new(());
 
+/// Locate the freshly-built `proxy-x` binary.
+///
+/// `CARGO_BIN_EXE_*` is not reliably injected by every Cargo configuration, so
+/// resolve the binary via `CARGO_MANIFEST_DIR` (falling back to the current
+/// directory, which is the package root when `cargo test` runs integration
+/// tests) joined with the debug profile output.
+fn cargo_bin() -> std::path::PathBuf {
+    let base = std::env::var("CARGO_MANIFEST_DIR")
+        .ok()
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+    let bin = base.join("target").join("debug").join("proxy-x");
+    assert!(
+        bin.exists(),
+        "proxy-x binary not found at {bin:?}; run `cargo build` first"
+    );
+    bin
+}
+
 /// Returns Ok(()) if the `git` binary is available, Err otherwise.
 fn git_available() -> std::io::Result<()> {
     std::process::Command::new("git")
@@ -183,6 +202,46 @@ fn test_async_ping_successful_to_localhost() {
         result.is_ok(),
         "async_ping to 127.0.0.1 should succeed: {:?}",
         result.err()
+    );
+}
+
+#[test]
+fn test_cli_exits_nonzero_on_failure_and_reports_stderr() {
+    // End-to-end: a failing command (`enable` with a scheme-less URL) must
+    // surface a message on stderr AND exit with a non-zero status so that
+    // shells and CI can detect the failure. Validation runs before any
+    // git/npm config write, so this test must not mutate global config.
+    let bin = cargo_bin();
+    let output = std::process::Command::new(bin)
+        .args(["enable", "localhost:8080"])
+        .output()
+        .expect("failed to execute proxy-x binary");
+
+    assert!(
+        !output.status.success(),
+        "failing command should exit non-zero; got {:?}",
+        output.status
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("Error enabling proxy"),
+        "stderr should report the proxied backend error, got: {stderr}"
+    );
+    assert!(
+        stderr.contains("scheme"),
+        "stderr should mention the scheme requirement, got: {stderr}"
+    );
+
+    // Validation runs before any config write, so git's http.proxy must be
+    // absent after a rejected enable.
+    let git_proxy = std::process::Command::new("git")
+        .args(["config", "--global", "http.proxy"])
+        .output()
+        .expect("failed to read git config");
+    assert!(
+        !git_proxy.status.success(),
+        "git http.proxy must not be set after a rejected enable"
     );
 }
 

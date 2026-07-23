@@ -55,10 +55,17 @@ struct PingArgs {
     interval: u64,
 }
 
+/// Parse and execute the CLI command.
+///
+/// On a command failure, the error is printed to stderr and the process exits
+/// with status `1` so that shells, `&&`, `$?`, and CI can detect the failure.
+/// Successful commands exit with status `0`. (Argument-parsing errors are
+/// handled by `clap`, which exits with its own non-zero status.)
 pub fn execute() {
     let cli = Cli::parse();
     if let Some(msg) = run(cli.command) {
         eprintln!("{msg}");
+        std::process::exit(1);
     }
 }
 
