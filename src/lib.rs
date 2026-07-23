@@ -60,6 +60,15 @@ pub fn validate_proxy_url(url: &str) -> io::Result<()> {
 }
 
 pub fn enable_proxy(proxy_url: &str) -> io::Result<()> {
+    enable_proxy_with(proxy_url, GIT, NPM)
+}
+
+/// Implementation of [`enable_proxy`] with injectable git/npm binaries.
+///
+/// Taking the binary names as parameters (instead of hardcoding [`GIT`]/[`NPM`])
+/// lets tests point npm at a non-existent binary to exercise the rollback path
+/// without needing npm to actually fail.
+fn enable_proxy_with(proxy_url: &str, git: &str, npm: &str) -> io::Result<()> {
     // Validate up front so an invalid URL never leaves a half-configured
     // proxy behind if a later step fails.
     validate_proxy_url(proxy_url)?;
@@ -67,23 +76,23 @@ pub fn enable_proxy(proxy_url: &str) -> io::Result<()> {
     // Capture the prior value of every key we touch so that a partial failure
     // can be rolled back to exactly where the user started, rather than
     // silently dropping a proxy they had configured before calling `enable`.
-    let git_before = read_git_proxy();
-    let npm_proxy_before = read_npm_config("proxy");
-    let npm_https_before = read_npm_config("https-proxy");
+    let git_before = read_git_proxy_with(git);
+    let npm_proxy_before = read_npm_config_with(npm, "proxy");
+    let npm_https_before = read_npm_config_with(npm, "https-proxy");
 
-    set_config("http.proxy", Some(proxy_url), GIT)?;
+    set_config("http.proxy", Some(proxy_url), git)?;
 
     // npm distinguishes `proxy` (used for http registries) from `https-proxy`
     // (used for https registries). The default registry is https, so setting
     // only `proxy` would NOT proxy `npm install`; both keys must be set.
-    let npm_result = set_config("proxy", Some(proxy_url), NPM)
-        .and_then(|()| set_config("https-proxy", Some(proxy_url), NPM));
+    let npm_result = set_config("proxy", Some(proxy_url), npm)
+        .and_then(|()| set_config("https-proxy", Some(proxy_url), npm));
     if let Err(e) = npm_result {
         // Roll back all three keys to their previous values (unset when there
         // was none) to avoid leaving the system in a partial/inconsistent state.
-        let _ = set_config("http.proxy", git_before.as_deref(), GIT);
-        let _ = set_config("proxy", npm_proxy_before.as_deref(), NPM);
-        let _ = set_config("https-proxy", npm_https_before.as_deref(), NPM);
+        let _ = set_config("http.proxy", git_before.as_deref(), git);
+        let _ = set_config("proxy", npm_proxy_before.as_deref(), npm);
+        let _ = set_config("https-proxy", npm_https_before.as_deref(), npm);
         return Err(e);
     }
     println!("Proxy enabled");
@@ -91,19 +100,24 @@ pub fn enable_proxy(proxy_url: &str) -> io::Result<()> {
 }
 
 pub fn disable_proxy() -> io::Result<()> {
-    // Save the current git proxy value so we can roll back if npm fails.
-    let git_before = read_git_proxy();
+    disable_proxy_with(GIT, NPM)
+}
 
-    set_config("http.proxy", None, GIT)?;
+/// Implementation of [`disable_proxy`] with injectable git/npm binaries.
+fn disable_proxy_with(git: &str, npm: &str) -> io::Result<()> {
+    // Save the current git proxy value so we can roll back if npm fails.
+    let git_before = read_git_proxy_with(git);
+
+    set_config("http.proxy", None, git)?;
 
     // Unset both npm proxy keys (see enable_proxy for why both are managed).
     let npm_result =
-        set_config("proxy", None, NPM).and_then(|()| set_config("https-proxy", None, NPM));
+        set_config("proxy", None, npm).and_then(|()| set_config("https-proxy", None, npm));
     if let Err(e) = npm_result {
         // Rollback: git proxy was unset, but npm failed.
         // Attempt to restore the previous git proxy value (npm is best-effort).
         if let Some(prev) = git_before {
-            let _ = set_config("http.proxy", Some(&prev), GIT);
+            let _ = set_config("http.proxy", Some(&prev), git);
         }
         return Err(e);
     }
@@ -111,13 +125,20 @@ pub fn disable_proxy() -> io::Result<()> {
     Ok(())
 }
 
-/// Read the current global git `http.proxy` value.
+/// Read the current global git `http.proxy` value (using the [`GIT`] binary).
 ///
 /// Returns `None` when the key is unset, empty, or git is unavailable.
-/// Shared by [`enable_proxy`] and [`disable_proxy`] so both can restore the
-/// previous proxy on a partial (npm) failure instead of silently dropping it.
 fn read_git_proxy() -> Option<String> {
-    Command::new(GIT)
+    read_git_proxy_with(GIT)
+}
+
+/// Read the global git `http.proxy` value using the given git binary.
+///
+/// Shared by [`enable_proxy_with`] and [`disable_proxy_with`] so both can
+/// restore the previous proxy on a partial (npm) failure instead of silently
+/// dropping it. The binary is injectable for tests.
+fn read_git_proxy_with(git: &str) -> Option<String> {
+    Command::new(git)
         .args(["config", "--global", "http.proxy"])
         .output()
         .ok()
@@ -131,13 +152,21 @@ fn read_git_proxy() -> Option<String> {
         })
 }
 
-/// Read an npm config value by key (e.g. `"proxy"` or `"https-proxy"`).
+/// Read an npm config value by key using the [`NPM`] binary
+/// (e.g. `"proxy"` or `"https-proxy"`).
 ///
-/// Returns `None` when the key is unset (npm prints the literal `undefined`),
-/// the output is empty, or npm is unavailable. Shared by [`enable_proxy`],
-/// [`disable_proxy`], and [`proxy_status`].
+/// Returns `None` when the key is unset (npm prints a sentinel), the output is
+/// empty, or npm is unavailable.
 fn read_npm_config(key: &str) -> Option<String> {
-    let output = Command::new(NPM)
+    read_npm_config_with(NPM, key)
+}
+
+/// Read an npm config value by key using the given npm binary.
+///
+/// Shared by [`enable_proxy_with`], [`disable_proxy_with`], and
+/// [`proxy_status`]. The binary is injectable for tests.
+fn read_npm_config_with(npm: &str, key: &str) -> Option<String> {
+    let output = Command::new(npm)
         .args(["config", "get", key])
         .output()
         .ok()?;
@@ -456,5 +485,80 @@ mod tests {
             None,
             "cleanup should clear the git proxy"
         );
+    }
+
+    /// A non-existent npm binary makes every npm step fail, letting these tests
+    /// exercise the rollback path (git set, then npm fails) without needing npm
+    /// to genuinely break.
+    const BAD_NPM: &str = "proxy-x-nonexistent-npm-binary";
+
+    #[test]
+    fn test_enable_proxy_rolls_back_git_to_prior_value_when_npm_fails() {
+        let _guard = CONFIG_LOCK.lock().unwrap();
+
+        // Establish a pre-existing git proxy that a failed enable must preserve.
+        let prior = "http://prior.proxy.example:1111";
+        set_config("http.proxy", Some(prior), GIT).expect("setting prior git proxy");
+
+        let result = enable_proxy_with("http://new.proxy.example:2222", GIT, BAD_NPM);
+        assert!(
+            result.is_err(),
+            "enable should fail when npm is unavailable"
+        );
+
+        // Core guarantee: git http.proxy is restored to the PRIOR value — not
+        // wiped, and not left at the new value.
+        assert_eq!(
+            read_git_proxy().as_deref(),
+            Some(prior),
+            "git http.proxy must be rolled back to its prior value on npm failure"
+        );
+
+        let _ = set_config("http.proxy", None, GIT);
+    }
+
+    #[test]
+    fn test_enable_proxy_unsets_git_when_npm_fails_and_no_prior() {
+        let _guard = CONFIG_LOCK.lock().unwrap();
+
+        let _ = set_config("http.proxy", None, GIT);
+        assert_eq!(read_git_proxy(), None, "precondition: no prior git proxy");
+
+        let result = enable_proxy_with("http://new.proxy.example:2222", GIT, BAD_NPM);
+        assert!(
+            result.is_err(),
+            "enable should fail when npm is unavailable"
+        );
+
+        // With no prior value, the rollback must unset git (not leave the new
+        // value behind).
+        assert_eq!(
+            read_git_proxy(),
+            None,
+            "git http.proxy must be unset on rollback when there was no prior value"
+        );
+    }
+
+    #[test]
+    fn test_disable_proxy_restores_git_when_npm_fails() {
+        let _guard = CONFIG_LOCK.lock().unwrap();
+
+        let prior = "http://prior.proxy.example:3333";
+        set_config("http.proxy", Some(prior), GIT).expect("setting prior git proxy");
+
+        let result = disable_proxy_with(GIT, BAD_NPM);
+        assert!(
+            result.is_err(),
+            "disable should fail when npm is unavailable"
+        );
+
+        // The git proxy must be restored after a failed disable.
+        assert_eq!(
+            read_git_proxy().as_deref(),
+            Some(prior),
+            "git http.proxy must be restored on a failed disable"
+        );
+
+        let _ = set_config("http.proxy", None, GIT);
     }
 }

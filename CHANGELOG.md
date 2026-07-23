@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add unit tests for `ping`/`pin` success and failure paths
 
 ### Changed
+- `enable_proxy`/`disable_proxy` and the git/npm config readers now delegate to
+  binary-injectable `*_with` helpers (public API unchanged). This makes the
+  npm-failure rollback path unit-testable; added tests verifying git `http.proxy`
+  is rolled back to its prior value (or unset when there was none) when npm
+  fails during both enable and disable
 - separate `execute()` parsing from dispatch via `run()` returning `Option<String>`
 - update README: `pin` description no longer references tokio specifically
 - add per-reply timeout (5s Linux/macOS, 5s Windows) to prevent hanging
