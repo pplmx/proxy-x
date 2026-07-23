@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add unit tests for `ping`/`pin` success and failure paths
 
 ### Changed
+- expand the README: promote Usage to a top-level section and document exactly
+  what `enable`/`disable` configure (git `http.proxy`, which covers both http
+  and https; npm `proxy` + `https-proxy`) plus the validate + rollback behavior
 - `enable_proxy`/`disable_proxy` and the git/npm config readers now delegate to
   binary-injectable `*_with` helpers (public API unchanged). This makes the
   npm-failure rollback path unit-testable; added tests verifying git `http.proxy`
