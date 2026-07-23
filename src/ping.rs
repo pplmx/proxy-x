@@ -26,10 +26,21 @@ pub struct PingParams<'a> {
 /// only `count` and `size` are mapped (TTL via `-i` and interval are not
 /// supported by the built-in Windows `ping`).
 pub fn ping(params: &PingParams) -> io::Result<()> {
-    let mut cmd = Command::new(ping_binary());
+    execute_ping(ping_binary(), params)
+}
+
+/// Execute a ping using the given binary name.
+///
+/// Separated from [`ping`] so tests can inject a non-existent binary and
+/// observe the spawn-failure error (with its [`io::ErrorKind`] preserved).
+fn execute_ping(binary: &str, params: &PingParams) -> io::Result<()> {
+    let mut cmd = Command::new(binary);
     build_args(&mut cmd, params);
 
-    let output = cmd.output().map_err(io::Error::other)?;
+    // Propagate spawn errors (e.g. a missing binary) directly so the original
+    // io::ErrorKind (such as NotFound) is preserved for callers that match on
+    // it, rather than being flattened to ErrorKind::Other.
+    let output = cmd.output()?;
 
     // Print the system ping output so the user sees per-packet results.
     if !output.stdout.is_empty() {
@@ -163,6 +174,28 @@ mod tests {
         assert!(
             err.contains("this-host-definitely-does-not-exist"),
             "error should mention the destination: {err}"
+        );
+    }
+
+    #[test]
+    fn test_execute_ping_missing_binary_preserves_not_found_kind() {
+        // A non-existent binary makes Command::output() fail with
+        // ErrorKind::NotFound. execute_ping must propagate that error WITHOUT
+        // re-wrapping it (the old `.map_err(io::Error::other)` flattened the
+        // kind to Other), so callers can still match on ErrorKind::NotFound.
+        let params = PingParams {
+            destination: "127.0.0.1",
+            count: 1,
+            size: 56,
+            ttl: 64,
+            interval: 1000,
+        };
+        let result = execute_ping("proxy-x-nonexistent-ping-binary", &params);
+        let err = result.expect_err("a missing ping binary should error");
+        assert_eq!(
+            err.kind(),
+            io::ErrorKind::NotFound,
+            "spawn failure should preserve ErrorKind::NotFound, got: {err:?}"
         );
     }
 }

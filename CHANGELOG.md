@@ -41,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - update the docs
 
 ### Fixed
+- `ping` no longer re-wraps the spawn error from a missing `ping` binary, so
+  the original `io::ErrorKind` (e.g. `NotFound`) is preserved for callers that
+  match on it instead of being flattened to `ErrorKind::Other`. The command
+  execution was extracted into an internal `execute_ping` helper so this path
+  is unit-testable
 - `enable`/`disable` now manage npm's `https-proxy` in addition to `proxy`.
   The default npm registry is `https://`, and npm uses `https-proxy` (not
   `proxy`) for https registries, so previously `npm install` did NOT route
