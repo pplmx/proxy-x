@@ -6,14 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- build.rs for automatic Git hook installation via husky-rs
 - `pin` command documentation in README
+- `disable` command help description
 
 ### Changed
-- move husky-rs from dependencies to build-dependencies
+- move husky-rs to dev-dependencies (it's a dev tool, not needed at build time)
+- remove local build.rs (husky-rs build script handles hook installation)
+- update clap to ~4.6.0
+- update husky-rs to 0.3
 - set_config returns Result instead of panicking on invalid tool
 - enable_proxy/disable_proxy return io::Result
-- ping_hi/pin_hi return io::Result with proper error messages
+- ping() / async_ping() return io::Result with proper error messages
 - update the docs
 
 ## [0.2.1] - 2023-12-26
