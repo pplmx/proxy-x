@@ -131,6 +131,7 @@ fn test_disable_proxy_is_idempotent_when_not_set() {
         result.err()
     );
 }
+
 #[test]
 fn test_ping_returns_unsupported_with_params() {
     let params = proxy_x::ping::PingParams {

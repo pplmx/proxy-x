@@ -13,14 +13,39 @@ pub const NPM: &str = "npm";
 
 pub fn enable_proxy(proxy_url: &str) -> io::Result<()> {
     set_config("http.proxy", Some(proxy_url), "git")?;
-    set_config("proxy", Some(proxy_url), NPM)?;
+    if let Err(e) = set_config("proxy", Some(proxy_url), NPM) {
+        // Rollback: git proxy was set successfully, but npm failed.
+        // Attempt to unset the git proxy to avoid leaving a partial state.
+        let _ = set_config("http.proxy", None, "git");
+        return Err(e);
+    }
     println!("Proxy enabled");
     Ok(())
 }
 
 pub fn disable_proxy() -> io::Result<()> {
+    // Save the current git proxy value so we can roll back if npm fails.
+    let git_proxy_before = std::process::Command::new("git")
+        .args(["config", "--global", "http.proxy"])
+        .output()
+        .ok()
+        .and_then(|o| {
+            if o.status.success() {
+                Some(String::from_utf8_lossy(&o.stdout).trim().to_string())
+            } else {
+                None
+            }
+        });
+
     set_config("http.proxy", None, "git")?;
-    set_config("proxy", None, NPM)?;
+    if let Err(e) = set_config("proxy", None, NPM) {
+        // Rollback: git proxy was unset, but npm failed.
+        // Attempt to restore the previous git proxy value.
+        if let Some(prev) = git_proxy_before {
+            let _ = set_config("http.proxy", Some(&prev), "git");
+        }
+        return Err(e);
+    }
     println!("Proxy disabled");
     Ok(())
 }

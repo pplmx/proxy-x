@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
+- `enable_proxy` now rolls back the git proxy config if the npm config
+  step fails, preventing a partially-configured state
+- `disable_proxy` now restores the previous git proxy value if the npm
+  config step fails during disable
 - `disable_proxy` no longer fails when the proxy is not currently set (git
   returns exit code 5 when unsetting a non-existent key; this is now treated
   as a no-op instead of an error)
