@@ -44,6 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   calling `enable`; the prior value is now preserved (and unset only when
   there was none). The previous-value lookup is shared with `disable_proxy`
   via a new internal `read_git_proxy` helper
+- `ping`/`pin` `--count` (`-c`) is no longer capped at 255. The field was
+  typed `u8`, so clap rejected any count above 255 even though the wrapped
+  system `ping` accepts arbitrarily large counts; it is now `u64`, matching
+  the `interval` field
 - `enable_proxy` now validates the proxy URL (must include a scheme such as
   `http://`) before writing any config. Both `git` and `npm` silently accept
   scheme-less URLs like `localhost:8080`, which are then unusable as proxies;

@@ -7,7 +7,7 @@ use std::process::Command;
 #[derive(Clone, Debug)]
 pub struct PingParams<'a> {
     pub destination: &'a str,
-    pub count: u8,
+    pub count: u64,
     pub size: usize,
     pub ttl: u32,
     pub interval: u64,

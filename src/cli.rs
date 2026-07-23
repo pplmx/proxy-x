@@ -35,7 +35,7 @@ struct PingArgs {
     destination: String,
 
     #[arg(short, default_value_t = 4, help = "Stop after <count> replies")]
-    count: u8,
+    count: u64,
 
     #[arg(
         short,
@@ -342,6 +342,18 @@ mod tests {
                 assert_eq!(args.ttl, 64);
                 assert_eq!(args.interval, 1000);
             }
+            _ => panic!("expected Ping command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_ping_accepts_count_above_u8_max() {
+        // `count` was previously `u8`, so clap rejected any `-c` above 255
+        // even though the wrapped system `ping` accepts arbitrarily large
+        // counts. This guards against regressing back to a narrow type.
+        let cli = Cli::try_parse_from(["proxy-x", "ping", "8.8.8.8", "-c", "1000"]).unwrap();
+        match cli.command {
+            Some(Commands::Ping(args)) => assert_eq!(args.count, 1000),
             _ => panic!("expected Ping command"),
         }
     }
