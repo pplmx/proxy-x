@@ -93,12 +93,7 @@ fn ping_binary() -> &'static str {
 /// Build the argument list for the current platform.
 #[cfg(not(windows))]
 fn build_args(cmd: &mut Command, params: &PingParams) {
-    cmd.args([
-        "-c",
-        &params.count.to_string(),
-        "-s",
-        &params.size.to_string(),
-    ]);
+    cmd.args(["-c", &params.count.to_string(), "-s", &params.size.to_string()]);
 
     // TTL
     cmd.arg("-t");
@@ -121,12 +116,7 @@ fn build_args(cmd: &mut Command, params: &PingParams) {
 /// Build the argument list for Windows.
 #[cfg(windows)]
 fn build_args(cmd: &mut Command, params: &PingParams) {
-    cmd.args([
-        "-n",
-        &params.count.to_string(),
-        "-l",
-        &params.size.to_string(),
-    ]);
+    cmd.args(["-n", &params.count.to_string(), "-l", &params.size.to_string()]);
     // -w sets the per-reply timeout in milliseconds. 5000ms (5s) prevents
     // hanging on unreachable hosts.
     cmd.arg("-w");
@@ -166,11 +156,7 @@ mod tests {
             interval: 1000,
         };
         let result = ping(&params);
-        assert!(
-            result.is_ok(),
-            "ping to 127.0.0.1 should succeed: {:?}",
-            result.err()
-        );
+        assert!(result.is_ok(), "ping to 127.0.0.1 should succeed: {:?}", result.err());
     }
 
     #[test]

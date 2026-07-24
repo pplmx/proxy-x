@@ -1,8 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 
-use proxy_x::{
-    disable_proxy, enable_proxy, get_agent_ip, pin::async_ping, ping::ping, proxy_status,
-};
+use proxy_x::{disable_proxy, enable_proxy, get_agent_ip, pin::async_ping, ping::ping, proxy_status};
 
 #[derive(Parser)]
 #[command(arg_required_else_help = true, author, version, about, long_about = None)]
@@ -41,11 +39,7 @@ struct PingArgs {
     #[arg(short, default_value_t = 4, help = "Stop after <count> replies")]
     count: u64,
 
-    #[arg(
-        short,
-        default_value_t = 56,
-        help = "Use <size> as number of data bytes to be sent"
-    )]
+    #[arg(short, default_value_t = 56, help = "Use <size> as number of data bytes to be sent")]
     size: usize,
 
     #[arg(short, default_value_t = 64, help = "Define time to live")]
@@ -126,14 +120,8 @@ fn run(command: Option<Commands>) -> Option<String> {
             if status.is_disabled() {
                 println!("Proxy is disabled");
             } else {
-                println!(
-                    "git http.proxy:  {}",
-                    status.git.as_deref().unwrap_or("(not set)")
-                );
-                println!(
-                    "npm proxy:       {}",
-                    status.npm.as_deref().unwrap_or("(not set)")
-                );
+                println!("git http.proxy:  {}", status.git.as_deref().unwrap_or("(not set)"));
+                println!("npm proxy:       {}", status.npm.as_deref().unwrap_or("(not set)"));
                 println!(
                     "npm https-proxy: {}",
                     status.npm_https.as_deref().unwrap_or("(not set)")
@@ -218,10 +206,7 @@ mod tests {
         // `status` is read-only and always succeeds (returns None), whether or
         // not a proxy is currently configured or git/npm are even installed.
         let result = run(Some(Commands::Status));
-        assert!(
-            result.is_none(),
-            "status dispatch should never error: {result:?}"
-        );
+        assert!(result.is_none(), "status dispatch should never error: {result:?}");
     }
 
     #[test]
@@ -358,8 +343,7 @@ mod tests {
 
     #[test]
     fn test_cli_parse_ping_with_custom_args() {
-        let cli =
-            Cli::try_parse_from(["proxy-x", "ping", "8.8.8.8", "-c", "10", "-s", "128"]).unwrap();
+        let cli = Cli::try_parse_from(["proxy-x", "ping", "8.8.8.8", "-c", "10", "-s", "128"]).unwrap();
         match cli.command {
             Some(Commands::Ping(args)) => {
                 assert_eq!(args.destination, "8.8.8.8");

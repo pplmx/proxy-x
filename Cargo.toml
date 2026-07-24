@@ -2,15 +2,24 @@
 name = "proxy-x"
 version = "0.2.2"
 edition = "2021"
+rust-version = "1.78"
 description = "A simple proxy config tool."
 authors = ["Mystic"]
 repository = "https://github.com/pplmx/proxy-x"
+homepage = "https://github.com/pplmx/proxy-x"
+readme = "README.md"
 license = "MIT OR Apache-2.0"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+keywords = ["proxy", "git", "npm", "networking", "cli"]
+categories = ["command-line-utilities", "network-programming"]
 
 [dependencies]
 clap = { version = "~4.6.0", features = ["cargo", "derive"] }
 
 [dev-dependencies]
 husky-rs = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

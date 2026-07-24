@@ -146,8 +146,8 @@ fn enable_proxy_with(proxy_url: &str, git: &str, npm: &str) -> io::Result<()> {
     // npm distinguishes `proxy` (used for http registries) from `https-proxy`
     // (used for https registries). The default registry is https, so setting
     // only `proxy` would NOT proxy `npm install`; both keys must be set.
-    let npm_result = set_config("proxy", Some(proxy_url), npm)
-        .and_then(|()| set_config("https-proxy", Some(proxy_url), npm));
+    let npm_result =
+        set_config("proxy", Some(proxy_url), npm).and_then(|()| set_config("https-proxy", Some(proxy_url), npm));
     if let Err(e) = npm_result {
         // Roll back all three keys to their previous values (unset when there
         // was none) to avoid leaving the system in a partial/inconsistent state.
@@ -183,8 +183,7 @@ fn disable_proxy_with(git: &str, npm: &str) -> io::Result<()> {
     set_config("http.proxy", None, git)?;
 
     // Unset both npm proxy keys (see enable_proxy for why both are managed).
-    let npm_result =
-        set_config("proxy", None, npm).and_then(|()| set_config("https-proxy", None, npm));
+    let npm_result = set_config("proxy", None, npm).and_then(|()| set_config("https-proxy", None, npm));
     if let Err(e) = npm_result {
         // Rollback: git proxy was unset, but npm failed.
         // Attempt to restore the previous git proxy value (npm is best-effort).
@@ -238,10 +237,7 @@ fn read_npm_config(key: &str) -> Option<String> {
 /// Shared by [`enable_proxy_with`], [`disable_proxy_with`], and
 /// [`proxy_status`]. The binary is injectable for tests.
 fn read_npm_config_with(npm: &str, key: &str) -> Option<String> {
-    let output = Command::new(npm)
-        .args(["config", "get", key])
-        .output()
-        .ok()?;
+    let output = Command::new(npm).args(["config", "get", key]).output().ok()?;
     if !output.status.success() {
         return None;
     }
@@ -427,10 +423,7 @@ mod tests {
         // non-zero, value is Some (so the git exit-5 no-op branch does not
         // apply), and a descriptive io::Error must be returned.
         let result = set_config("", Some("http://127.0.0.1:38080"), NPM);
-        assert!(
-            result.is_err(),
-            "npm config set with an empty key should fail"
-        );
+        assert!(result.is_err(), "npm config set with an empty key should fail");
         let err = result.unwrap_err().to_string();
         assert!(
             err.contains(NPM),
@@ -466,10 +459,7 @@ mod tests {
         // validate_proxy_url must fail fast instead of storing broken config.
         for bad in ["", "   ", "localhost:8080", "127.0.0.1:8080", "not a url"] {
             let result = validate_proxy_url(bad);
-            assert!(
-                result.is_err(),
-                "expected invalid proxy URL to be rejected: {bad:?}"
-            );
+            assert!(result.is_err(), "expected invalid proxy URL to be rejected: {bad:?}");
             let msg = result.unwrap_err().to_string();
             assert!(
                 msg.contains("scheme") || msg.contains("empty"),
@@ -501,11 +491,7 @@ mod tests {
 
         // Unset and confirm it returns to None (also serves as cleanup).
         let _ = set_config("http.proxy", None, GIT);
-        assert_eq!(
-            read_git_proxy(),
-            None,
-            "read_git_proxy should be None after unsetting"
-        );
+        assert_eq!(read_git_proxy(), None, "read_git_proxy should be None after unsetting");
     }
 
     #[test]
@@ -525,11 +511,7 @@ mod tests {
             None,
             "newer npm prints the literal 'null' for unset keys"
         );
-        assert_eq!(
-            parse_npm_config_output(""),
-            None,
-            "empty output means unset"
-        );
+        assert_eq!(parse_npm_config_output(""), None, "empty output means unset");
         assert_eq!(
             parse_npm_config_output("   \n"),
             None,
@@ -570,11 +552,7 @@ mod tests {
         let _guard = CONFIG_LOCK.lock().unwrap();
 
         let _ = set_config("http.proxy", None, GIT);
-        assert_eq!(
-            proxy_status().git,
-            None,
-            "git proxy should be None when unset"
-        );
+        assert_eq!(proxy_status().git, None, "git proxy should be None when unset");
 
         let url = "http://127.0.0.1:38080";
         set_config("http.proxy", Some(url), GIT).expect("setting git proxy should succeed");
@@ -585,11 +563,7 @@ mod tests {
         );
 
         let _ = set_config("http.proxy", None, GIT);
-        assert_eq!(
-            proxy_status().git,
-            None,
-            "cleanup should clear the git proxy"
-        );
+        assert_eq!(proxy_status().git, None, "cleanup should clear the git proxy");
     }
 
     /// A non-existent npm binary makes every npm step fail, letting these tests
@@ -606,10 +580,7 @@ mod tests {
         set_config("http.proxy", Some(prior), GIT).expect("setting prior git proxy");
 
         let result = enable_proxy_with("http://new.proxy.example:2222", GIT, BAD_NPM);
-        assert!(
-            result.is_err(),
-            "enable should fail when npm is unavailable"
-        );
+        assert!(result.is_err(), "enable should fail when npm is unavailable");
 
         // Core guarantee: git http.proxy is restored to the PRIOR value — not
         // wiped, and not left at the new value.
@@ -630,10 +601,7 @@ mod tests {
         assert_eq!(read_git_proxy(), None, "precondition: no prior git proxy");
 
         let result = enable_proxy_with("http://new.proxy.example:2222", GIT, BAD_NPM);
-        assert!(
-            result.is_err(),
-            "enable should fail when npm is unavailable"
-        );
+        assert!(result.is_err(), "enable should fail when npm is unavailable");
 
         // With no prior value, the rollback must unset git (not leave the new
         // value behind).
@@ -652,10 +620,7 @@ mod tests {
         set_config("http.proxy", Some(prior), GIT).expect("setting prior git proxy");
 
         let result = disable_proxy_with(GIT, BAD_NPM);
-        assert!(
-            result.is_err(),
-            "disable should fail when npm is unavailable"
-        );
+        assert!(result.is_err(), "disable should fail when npm is unavailable");
 
         // The git proxy must be restored after a failed disable.
         assert_eq!(

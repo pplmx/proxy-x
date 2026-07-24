@@ -31,16 +31,13 @@ fn cargo_bin() -> std::path::PathBuf {
 
 /// Returns Ok(()) if the `git` binary is available, Err otherwise.
 fn git_available() -> std::io::Result<()> {
-    std::process::Command::new("git")
-        .arg("--version")
-        .output()
-        .map(|o| {
-            if o.status.success() {
-                Ok(())
-            } else {
-                Err(std::io::Error::other("git --version failed"))
-            }
-        })?
+    std::process::Command::new("git").arg("--version").output().map(|o| {
+        if o.status.success() {
+            Ok(())
+        } else {
+            Err(std::io::Error::other("git --version failed"))
+        }
+    })?
 }
 
 /// Read an npm config value by key, returning the trimmed stdout.
@@ -83,13 +80,8 @@ fn test_enable_disable_proxy_cycle() {
         .output()
         .expect("failed to read git config");
     assert!(git_config.status.success());
-    let git_val = String::from_utf8_lossy(&git_config.stdout)
-        .trim()
-        .to_string();
-    assert_eq!(
-        git_val, proxy_url,
-        "git http.proxy should be set to the proxy URL"
-    );
+    let git_val = String::from_utf8_lossy(&git_config.stdout).trim().to_string();
+    assert_eq!(git_val, proxy_url, "git http.proxy should be set to the proxy URL");
 
     // Verify BOTH npm keys were set. The default npm registry is https, so
     // enable_proxy must set `https-proxy` (used for https registries) in
@@ -152,16 +144,10 @@ fn test_get_agent_ip_returns_valid_ipv4_or_skips() {
             );
             // Loopback would indicate the socket didn't actually connect
             let addr = parsed.unwrap();
-            assert!(
-                !addr.is_loopback(),
-                "get_agent_ip should not return a loopback address"
-            );
+            assert!(!addr.is_loopback(), "get_agent_ip should not return a loopback address");
         }
         Err(e) => {
-            eprintln!(
-                "get_agent_ip failed (expected in restricted network): {}",
-                e
-            );
+            eprintln!("get_agent_ip failed (expected in restricted network): {}", e);
         }
     }
 }
@@ -200,11 +186,7 @@ fn test_ping_successful_to_localhost() {
         interval: 1000,
     };
     let result = proxy_x::ping::ping(&params);
-    assert!(
-        result.is_ok(),
-        "ping to 127.0.0.1 should succeed: {:?}",
-        result.err()
-    );
+    assert!(result.is_ok(), "ping to 127.0.0.1 should succeed: {:?}", result.err());
 }
 
 #[test]
