@@ -2,7 +2,7 @@
 name = "proxy-x"
 version = "0.2.2"
 edition = "2021"
-rust-version = "1.78"
+rust-version = "1.83"
 description = "A simple proxy config tool."
 authors = ["Mystic"]
 repository = "https://github.com/pplmx/proxy-x"
