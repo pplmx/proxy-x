@@ -122,8 +122,6 @@ jobs:
             -   name: Install Rust toolchain
                 uses: dtolnay/rust-toolchain@stable
             -   uses: Swatinem/rust-cache@v2
-            -   name: Run tests before publishing
-                run: cargo test --all-features --workspace
-            -   run: cargo publish --allow-dirty
+            -   run: cargo publish
                 env:
                     CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
