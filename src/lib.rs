@@ -634,3 +634,4 @@ mod tests {
 }
 // verified integration
 // v2
+// auto-hook test
