@@ -632,12 +632,4 @@ mod tests {
         let _ = set_config("http.proxy", None, GIT);
     }
 }
-// verified integration
-// v2
-// auto-hook test
-// test2
-fn bad() {}
-// prek-native test
-fn bad() {}
-// clean test
-// final test
+// test prek native
