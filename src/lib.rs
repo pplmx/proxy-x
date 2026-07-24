@@ -640,3 +640,4 @@ fn bad() {}
 // prek-native test
 fn bad() {}
 // clean test
+// final test
