@@ -636,3 +636,7 @@ mod tests {
 // v2
 // auto-hook test
 // test2
+fn bad() {}
+// prek-native test
+fn bad() {}
+// clean test
