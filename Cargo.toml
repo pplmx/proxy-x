@@ -16,7 +16,7 @@ categories = ["command-line-utilities", "network-programming"]
 clap = { version = "~4.6.0", features = ["cargo", "derive"] }
 
 [dev-dependencies]
-husky-rs = { git = "https://github.com/pplmx/husky-rs", branch = "prek" }
+husky-rs = "0.4"
 
 [profile.release]
 opt-level = 3
