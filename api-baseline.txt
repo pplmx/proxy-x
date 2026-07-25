@@ -1,0 +1,135 @@
+pub mod proxy_x
+pub mod proxy_x::pin
+pub struct proxy_x::pin::PingParams<'a>
+pub proxy_x::pin::PingParams::count: u64
+pub proxy_x::pin::PingParams::destination: &'a str
+pub proxy_x::pin::PingParams::interval: u64
+pub proxy_x::pin::PingParams::size: usize
+pub proxy_x::pin::PingParams::ttl: u32
+impl<'a> core::clone::Clone for proxy_x::ping::PingParams<'a>
+pub fn proxy_x::ping::PingParams<'a>::clone(&self) -> proxy_x::ping::PingParams<'a>
+impl<'a> core::fmt::Debug for proxy_x::ping::PingParams<'a>
+pub fn proxy_x::ping::PingParams<'a>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<'a> core::marker::Freeze for proxy_x::ping::PingParams<'a>
+impl<'a> core::marker::Send for proxy_x::ping::PingParams<'a>
+impl<'a> core::marker::Sync for proxy_x::ping::PingParams<'a>
+impl<'a> core::marker::Unpin for proxy_x::ping::PingParams<'a>
+impl<'a> core::marker::UnsafeUnpin for proxy_x::ping::PingParams<'a>
+impl<'a> core::panic::unwind_safe::RefUnwindSafe for proxy_x::ping::PingParams<'a>
+impl<'a> core::panic::unwind_safe::UnwindSafe for proxy_x::ping::PingParams<'a>
+impl<T, U> core::convert::Into<U> for proxy_x::ping::PingParams<'a> where U: core::convert::From<T>
+pub fn proxy_x::ping::PingParams<'a>::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for proxy_x::ping::PingParams<'a> where U: core::convert::Into<T>
+pub type proxy_x::ping::PingParams<'a>::Error = core::convert::Infallible
+pub fn proxy_x::ping::PingParams<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for proxy_x::ping::PingParams<'a> where U: core::convert::TryFrom<T>
+pub type proxy_x::ping::PingParams<'a>::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn proxy_x::ping::PingParams<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for proxy_x::ping::PingParams<'a> where T: core::clone::Clone
+pub type proxy_x::ping::PingParams<'a>::Owned = T
+pub fn proxy_x::ping::PingParams<'a>::clone_into(&self, &mut T)
+pub fn proxy_x::ping::PingParams<'a>::to_owned(&self) -> T
+impl<T> core::any::Any for proxy_x::ping::PingParams<'a> where T: 'static + ?core::marker::Sized
+pub fn proxy_x::ping::PingParams<'a>::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for proxy_x::ping::PingParams<'a> where T: ?core::marker::Sized
+pub fn proxy_x::ping::PingParams<'a>::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for proxy_x::ping::PingParams<'a> where T: ?core::marker::Sized
+pub fn proxy_x::ping::PingParams<'a>::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for proxy_x::ping::PingParams<'a> where T: core::clone::Clone
+pub unsafe fn proxy_x::ping::PingParams<'a>::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for proxy_x::ping::PingParams<'a>
+pub fn proxy_x::ping::PingParams<'a>::from(T) -> T
+pub fn proxy_x::pin::async_ping(&proxy_x::ping::PingParams<'_>) -> core::io::error::Result<()>
+pub mod proxy_x::ping
+pub struct proxy_x::ping::PingParams<'a>
+pub proxy_x::ping::PingParams::count: u64
+pub proxy_x::ping::PingParams::destination: &'a str
+pub proxy_x::ping::PingParams::interval: u64
+pub proxy_x::ping::PingParams::size: usize
+pub proxy_x::ping::PingParams::ttl: u32
+impl<'a> core::clone::Clone for proxy_x::ping::PingParams<'a>
+pub fn proxy_x::ping::PingParams<'a>::clone(&self) -> proxy_x::ping::PingParams<'a>
+impl<'a> core::fmt::Debug for proxy_x::ping::PingParams<'a>
+pub fn proxy_x::ping::PingParams<'a>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<'a> core::marker::Freeze for proxy_x::ping::PingParams<'a>
+impl<'a> core::marker::Send for proxy_x::ping::PingParams<'a>
+impl<'a> core::marker::Sync for proxy_x::ping::PingParams<'a>
+impl<'a> core::marker::Unpin for proxy_x::ping::PingParams<'a>
+impl<'a> core::marker::UnsafeUnpin for proxy_x::ping::PingParams<'a>
+impl<'a> core::panic::unwind_safe::RefUnwindSafe for proxy_x::ping::PingParams<'a>
+impl<'a> core::panic::unwind_safe::UnwindSafe for proxy_x::ping::PingParams<'a>
+impl<T, U> core::convert::Into<U> for proxy_x::ping::PingParams<'a> where U: core::convert::From<T>
+pub fn proxy_x::ping::PingParams<'a>::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for proxy_x::ping::PingParams<'a> where U: core::convert::Into<T>
+pub type proxy_x::ping::PingParams<'a>::Error = core::convert::Infallible
+pub fn proxy_x::ping::PingParams<'a>::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for proxy_x::ping::PingParams<'a> where U: core::convert::TryFrom<T>
+pub type proxy_x::ping::PingParams<'a>::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn proxy_x::ping::PingParams<'a>::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for proxy_x::ping::PingParams<'a> where T: core::clone::Clone
+pub type proxy_x::ping::PingParams<'a>::Owned = T
+pub fn proxy_x::ping::PingParams<'a>::clone_into(&self, &mut T)
+pub fn proxy_x::ping::PingParams<'a>::to_owned(&self) -> T
+impl<T> core::any::Any for proxy_x::ping::PingParams<'a> where T: 'static + ?core::marker::Sized
+pub fn proxy_x::ping::PingParams<'a>::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for proxy_x::ping::PingParams<'a> where T: ?core::marker::Sized
+pub fn proxy_x::ping::PingParams<'a>::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for proxy_x::ping::PingParams<'a> where T: ?core::marker::Sized
+pub fn proxy_x::ping::PingParams<'a>::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for proxy_x::ping::PingParams<'a> where T: core::clone::Clone
+pub unsafe fn proxy_x::ping::PingParams<'a>::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for proxy_x::ping::PingParams<'a>
+pub fn proxy_x::ping::PingParams<'a>::from(T) -> T
+pub fn proxy_x::ping::ping(&proxy_x::ping::PingParams<'_>) -> core::io::error::Result<()>
+pub struct proxy_x::ProxyStatus
+pub proxy_x::ProxyStatus::git: core::option::Option<alloc::string::String>
+pub proxy_x::ProxyStatus::npm: core::option::Option<alloc::string::String>
+pub proxy_x::ProxyStatus::npm_https: core::option::Option<alloc::string::String>
+impl proxy_x::ProxyStatus
+pub fn proxy_x::ProxyStatus::is_disabled(&self) -> bool
+impl core::clone::Clone for proxy_x::ProxyStatus
+pub fn proxy_x::ProxyStatus::clone(&self) -> proxy_x::ProxyStatus
+impl core::cmp::Eq for proxy_x::ProxyStatus
+impl core::cmp::PartialEq for proxy_x::ProxyStatus
+pub fn proxy_x::ProxyStatus::eq(&self, &proxy_x::ProxyStatus) -> bool
+impl core::default::Default for proxy_x::ProxyStatus
+pub fn proxy_x::ProxyStatus::default() -> proxy_x::ProxyStatus
+impl core::fmt::Debug for proxy_x::ProxyStatus
+pub fn proxy_x::ProxyStatus::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for proxy_x::ProxyStatus
+impl core::marker::Freeze for proxy_x::ProxyStatus
+impl core::marker::Send for proxy_x::ProxyStatus
+impl core::marker::Sync for proxy_x::ProxyStatus
+impl core::marker::Unpin for proxy_x::ProxyStatus
+impl core::marker::UnsafeUnpin for proxy_x::ProxyStatus
+impl core::panic::unwind_safe::RefUnwindSafe for proxy_x::ProxyStatus
+impl core::panic::unwind_safe::UnwindSafe for proxy_x::ProxyStatus
+impl<T, U> core::convert::Into<U> for proxy_x::ProxyStatus where U: core::convert::From<T>
+pub fn proxy_x::ProxyStatus::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for proxy_x::ProxyStatus where U: core::convert::Into<T>
+pub type proxy_x::ProxyStatus::Error = core::convert::Infallible
+pub fn proxy_x::ProxyStatus::try_from(U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for proxy_x::ProxyStatus where U: core::convert::TryFrom<T>
+pub type proxy_x::ProxyStatus::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn proxy_x::ProxyStatus::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for proxy_x::ProxyStatus where T: core::clone::Clone
+pub type proxy_x::ProxyStatus::Owned = T
+pub fn proxy_x::ProxyStatus::clone_into(&self, &mut T)
+pub fn proxy_x::ProxyStatus::to_owned(&self) -> T
+impl<T> core::any::Any for proxy_x::ProxyStatus where T: 'static + ?core::marker::Sized
+pub fn proxy_x::ProxyStatus::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for proxy_x::ProxyStatus where T: ?core::marker::Sized
+pub fn proxy_x::ProxyStatus::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for proxy_x::ProxyStatus where T: ?core::marker::Sized
+pub fn proxy_x::ProxyStatus::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for proxy_x::ProxyStatus where T: core::clone::Clone
+pub unsafe fn proxy_x::ProxyStatus::clone_to_uninit(&self, *mut u8)
+impl<T> core::convert::From<T> for proxy_x::ProxyStatus
+pub fn proxy_x::ProxyStatus::from(T) -> T
+pub const proxy_x::GIT: &str
+pub const proxy_x::NPM: &str
+pub fn proxy_x::disable_proxy() -> core::io::error::Result<()>
+pub fn proxy_x::enable_proxy(&str) -> core::io::error::Result<()>
+pub fn proxy_x::get_agent_ip() -> core::io::error::Result<alloc::string::String>
+pub fn proxy_x::proxy_status() -> proxy_x::ProxyStatus
+pub fn proxy_x::validate_proxy_url(&str) -> core::io::error::Result<()>

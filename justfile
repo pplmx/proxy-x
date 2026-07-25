@@ -22,9 +22,9 @@ test:
 fmt-check:
     cargo fmt --all --check
 
-# Run clippy (CI style)
+# Run clippy (CI style, matches project pedantic/nursery standards)
 clippy:
-    cargo clippy --all-targets --all-features --workspace -- -D warnings
+    cargo clippy --all-targets --all-features --workspace -- -D warnings -W clippy::pedantic -W clippy::nursery
 
 # Check documentation (CI style)
 doc-check:
@@ -42,15 +42,23 @@ coverage:
 quick: fmt-check clippy doc-check doctest test
 
 # Full CI gate
-ci: quick coverage msrv audit deny
+ci: quick coverage msrv audit deny public-api-check
 
 # MSRV check
 msrv:
     cargo +1.78 check --all-targets --all-features --workspace
 
+# Check public API hasn't changed (fails if baseline differs)
+public-api-check:
+    cargo public-api diff --manifest-path Cargo.toml || (echo "Public API changed. Run 'just public-api-baseline' to update." && false)
+
+# Regenerate public API baseline (run after intentional API changes)
+public-api-baseline:
+    cargo public-api --manifest-path Cargo.toml > api-baseline.txt
+
 # Auto-fix clippy + format
 fix:
-    cargo clippy --fix --allow-dirty --allow-staged --all-targets --all-features --workspace -- -D warnings
+    cargo clippy --fix --allow-dirty --allow-staged --all-targets --all-features --workspace -- -D warnings -W clippy::pedantic -W clippy::nursery
     cargo fmt --all
 
 # Security audit

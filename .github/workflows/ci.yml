@@ -50,7 +50,7 @@ jobs:
                     components: clippy
             -   uses: Swatinem/rust-cache@v2
             -   name: Clippy check
-                run: cargo clippy --all-targets --all-features --workspace -- -D warnings
+                run: cargo clippy --all-targets --all-features --workspace -- -D warnings -W clippy::pedantic -W clippy::nursery
 
     msrv:
         name: MSRV (1.78)
@@ -95,6 +95,32 @@ jobs:
                 run: cargo install cargo-llvm-cov
             -   name: Run coverage check
                 run: cargo llvm-cov --all-features --workspace --fail-under-lines 80
+
+    doctest:
+        name: Doctest
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Checkout repository
+                uses: actions/checkout@v7
+            -   name: Install Rust toolchain
+                uses: dtolnay/rust-toolchain@stable
+            -   uses: Swatinem/rust-cache@v2
+            -   name: Run doctests
+                run: cargo test --doc --workspace --all-features
+
+    public-api:
+        name: Public API baseline
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Checkout repository
+                uses: actions/checkout@v7
+            -   name: Install Rust toolchain
+                uses: dtolnay/rust-toolchain@stable
+            -   uses: Swatinem/rust-cache@v2
+            -   name: Install cargo-public-api
+                run: cargo install cargo-public-api --locked
+            -   name: Check public API diff
+                run: cargo public-api diff
 
     deny:
         name: cargo-deny
