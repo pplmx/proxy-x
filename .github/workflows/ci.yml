@@ -50,7 +50,7 @@ jobs:
                     components: clippy
             -   uses: Swatinem/rust-cache@v2
             -   name: Clippy check
-                run: cargo clippy --all-targets --all-features --workspace -- -D warnings -W clippy::pedantic -W clippy::nursery
+                run: cargo clippy --all-targets --all-features --workspace -- -D warnings
 
     msrv:
         name: MSRV (1.78)

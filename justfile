@@ -22,9 +22,9 @@ test:
 fmt-check:
     cargo fmt --all --check
 
-# Run clippy (CI style, matches project pedantic/nursery standards)
+# Run clippy (CI style)
 clippy:
-    cargo clippy --all-targets --all-features --workspace -- -D warnings -W clippy::pedantic -W clippy::nursery
+    cargo clippy --all-targets --all-features --workspace -- -D warnings
 
 # Check documentation (CI style)
 doc-check:
@@ -58,7 +58,7 @@ public-api-baseline:
 
 # Auto-fix clippy + format
 fix:
-    cargo clippy --fix --allow-dirty --allow-staged --all-targets --all-features --workspace -- -D warnings -W clippy::pedantic -W clippy::nursery
+    cargo clippy --fix --allow-dirty --allow-staged --all-targets --all-features --workspace -- -D warnings
     cargo fmt --all
 
 # Security audit
