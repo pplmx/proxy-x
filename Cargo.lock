@@ -106,9 +106,9 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "husky-rs"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8cf36212ff72cd6a4bb007339b99493d5ab296781673eba29f18b3375c85b9bc"
+checksum = "090571b154cbd5481c7dc51a4528fe94c75a292e0fd7719fe677526143d723ed"
 
 [[package]]
 name = "is_terminal_polyfill"
